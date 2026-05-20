@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import tempfile
 import uuid
@@ -103,6 +104,50 @@ def _render_page(
     )
 
 
+def _build_dump(outcome: dict) -> str:
+    """Serialize the full pipeline state as JSON for offline diagnosis.
+
+    Includes both anonymized and deanonymized data; share only with
+    parties trusted with the original PDF content.
+    """
+    doc: PdfDocument = outcome["doc"]
+    word_stream = []
+    for page_index in range(doc.page_count):
+        for w in doc.words(page_index):
+            word_stream.append(
+                {
+                    "page": page_index,
+                    "text": w.text,
+                    "bbox": list(w.bbox),
+                }
+            )
+    page_sizes = [
+        {"page": i, "width_pt": doc.page_size(i)[0], "height_pt": doc.page_size(i)[1]}
+        for i in range(doc.page_count)
+    ]
+    payload = {
+        "language": outcome["language"],
+        "thread_id": outcome["thread_id"],
+        "page_count": doc.page_count,
+        "page_sizes": page_sizes,
+        "markdown_raw": outcome["markdown_raw"],
+        "markdown_anonymized": outcome["markdown_anonymized"],
+        "mistakes_raw": [m.model_dump() for m in outcome["mistakes_raw"]],
+        "mistakes_clean": [m.model_dump() for m in outcome["mistakes_clean"]],
+        "located": [
+            {
+                "mistake": lm.mistake.model_dump(),
+                "page": lm.page_index,
+                "bbox": list(lm.bbox),
+            }
+            for lm in outcome["located"]
+        ],
+        "unlocatable": [m.model_dump() for m in outcome["unlocatable"]],
+        "word_stream": word_stream,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 def _render_debug_section(outcome: dict) -> None:
     """Show pipeline intermediates so the user can diagnose why a mistake is missing."""
     st.divider()
@@ -112,6 +157,14 @@ def _render_debug_section(outcome: dict) -> None:
         f"raw mistakes={len(outcome['mistakes_raw'])}, "
         f"located={len(outcome['located'])}, "
         f"unlocatable={len(outcome['unlocatable'])}"
+    )
+
+    st.download_button(
+        "Download pipeline dump (JSON)",
+        data=_build_dump(outcome),
+        file_name=f"proofreader-dump-{outcome['thread_id'][:8]}.json",
+        mime="application/json",
+        help="Full state: extracted Markdown, anonymized prompt, raw + deanonymized mistakes, located/unlocatable lists, per-page word stream. Share only with trusted parties since it contains the original PDF text.",
     )
 
     with st.expander("Markdown extracted from the PDF (sent to anonymizer)", expanded=False):
