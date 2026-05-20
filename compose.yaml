@@ -1,0 +1,12 @@
+services:
+  proofreader:
+    build: .
+    image: piighost-proofreader:latest
+    ports:
+      - "8501:8501"
+    environment:
+      PIIGHOST_API_URL: ${PIIGHOST_API_URL}
+      LITELLM_MODEL: ${LITELLM_MODEL}
+      LITELLM_API_KEY: ${LITELLM_API_KEY}
+      LITELLM_API_BASE: ${LITELLM_API_BASE}
+    restart: unless-stopped

@@ -1,0 +1,9 @@
+.venv/
+.git/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+samples/*.pdf
+tests/
+docs/
+*.tmp.pdf
