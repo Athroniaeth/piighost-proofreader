@@ -7,7 +7,10 @@ from proofreader.pdf_render import PdfDocument, Word
 def test_word_stream_has_known_words(tiny_pdf_path: Path):
     doc = PdfDocument(tiny_pdf_path)
     words = doc.words(page_index=0)
-    texts = [w.text for w in words]
+    # PyMuPDF tokenizes by whitespace, so trailing punctuation stays attached
+    # (e.g. "phrase." not "phrase"). The contract is verbatim text; tests
+    # strip punctuation only when comparing.
+    texts = [w.text.rstrip(".,;:!?") for w in words]
     assert "exemple" in texts
     assert "phrase" in texts
 

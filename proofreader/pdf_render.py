@@ -1,5 +1,4 @@
 """PyMuPDF wrapper, renders pages and exposes the word stream."""
-import string
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -39,9 +38,8 @@ class PdfDocument:
         page = self._doc.load_page(page_index)
         raw = page.get_text("words")  # list of (x0, y0, x1, y1, text, block, line, word_no)
         return tuple(
-            Word(text=text.strip(string.punctuation), bbox=(x0, y0, x1, y1), page_index=page_index)
+            Word(text=text, bbox=(x0, y0, x1, y1), page_index=page_index)
             for x0, y0, x1, y1, text, *_ in raw
-            if text.strip(string.punctuation)
         )
 
     def page_size(self, page_index: int) -> tuple[float, float]:
