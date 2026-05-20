@@ -189,6 +189,44 @@ def test_locate_tolerates_curly_vs_straight_apostrophe():
     assert located.bbox == (75, 0, 205, 10)
 
 
+def test_locate_substring_handles_subword_match():
+    """LLM may report 'une pipeline' even though PyMuPDF tokenises d'une as one word."""
+    stream = [
+        Word(text="industrialisation", bbox=(0, 0, 80, 10), page_index=0),
+        Word(text="d'une", bbox=(85, 0, 115, 10), page_index=0),
+        Word(text="pipeline", bbox=(120, 0, 165, 10), page_index=0),
+        Word(text="d'OCR,", bbox=(170, 0, 200, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="une pipeline",
+        correction="un pipeline",
+        description="x",
+        type="accord",
+        context_before="industrialisation d'une pipeline d'OCR, dans",
+    )
+    located = locate_mistake(m, words=stream)
+    assert located is not None
+    # Union bbox covers "d'une" + "pipeline" because the LLM's "une" is
+    # only a suffix of the PyMuPDF token "d'une".
+    assert located.bbox == (85, 0, 165, 10)
+
+
+def test_locate_substring_skips_short_needles():
+    """Short error_text (<5 chars normalized) must NOT trigger substring fallback."""
+    stream = [
+        Word(text="commune", bbox=(0, 0, 30, 10), page_index=0),  # contains "une"
+        Word(text="autre", bbox=(35, 0, 60, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="une",
+        correction="un",
+        description="x",
+        type="accord",
+        context_before="xyz",
+    )
+    assert locate_mistake(m, words=stream) is None
+
+
 def test_locate_returns_none_when_error_repeats_and_context_mismatches():
     """Strategy 3 only fires for unique error_text; otherwise None."""
     stream = [

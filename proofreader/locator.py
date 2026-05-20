@@ -7,6 +7,11 @@ from proofreader.pdf_render import Word
 
 _PUNCT = ".,;:!?\"'()[]{}«»"
 
+# Minimum normalized-needle length for the substring fallback strategy.
+# Anything shorter is at high risk of producing spurious matches inside
+# longer words (e.g. "une" inside "commune", "une" inside "jeune").
+_MIN_SUBSTRING_CHARS = 5
+
 # Map typographic quotes to their ASCII equivalents so LLM-normalized
 # strings ("d’automatisation") match PyMuPDF tokens that preserve the
 # original character ("d'automatisation") and vice versa.
@@ -58,6 +63,14 @@ def locate_mistake(mistake: Mistake, *, words: list[Word]) -> LocatedMistake | N
 
     # Strategy 3: error-only unique match, punctuation-tolerant.
     matched = _find_error_alone_if_unique(err_tokens, words)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 4: substring of the concatenated stream. Handles LLM
+    # tokenisation drift where the LLM treats "d'une" as "d'" + "une"
+    # and reports "une" as a standalone word that has no equivalent
+    # PyMuPDF token.
+    matched = _find_error_as_substring_if_unique(err_tokens, words)
     if matched is not None:
         return _build_located(mistake, matched)
 
@@ -118,6 +131,52 @@ def _find_error_alone_if_unique(
                 return None  # second occurrence, ambiguous
             match = list(words[i : i + n_err])
     return match
+
+
+def _find_error_as_substring_if_unique(
+    err_tokens: list[str], words: list[Word]
+) -> list[Word] | None:
+    """Locate err_tokens as a substring of the concatenated normalized stream.
+
+    Strategy of last resort: when neither word-aligned strategy matches,
+    project all words into a single normalized string and look for the
+    error as a literal substring. The match is mapped back to the
+    smallest Word range that fully covers it. Requires uniqueness in
+    the stream to keep false positives low.
+    """
+    if not words or not err_tokens:
+        return None
+    needle = " ".join(_normalize(t) for t in err_tokens).strip()
+    if len(needle) < _MIN_SUBSTRING_CHARS:
+        return None
+
+    parts: list[str] = []
+    offsets: list[tuple[int, int]] = []
+    cursor = 0
+    for w in words:
+        n = _normalize(w.text)
+        parts.append(n)
+        offsets.append((cursor, cursor + len(n)))
+        cursor += len(n) + 1  # +1 for the joining space
+    full = " ".join(parts)
+
+    first = full.find(needle)
+    if first == -1:
+        return None
+    if full.find(needle, first + 1) != -1:
+        return None  # ambiguous
+
+    last = first + len(needle)
+    start_word: int | None = None
+    end_word: int | None = None
+    for i, (a, b) in enumerate(offsets):
+        if start_word is None and b > first:
+            start_word = i
+        if a < last:
+            end_word = i
+    if start_word is None or end_word is None:
+        return None
+    return list(words[start_word : end_word + 1])
 
 
 def _build_located(mistake: Mistake, matched: list[Word]) -> LocatedMistake:
