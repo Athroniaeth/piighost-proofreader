@@ -149,6 +149,46 @@ def test_locate_falls_back_to_unique_error_when_context_is_wrong():
     assert located.bbox == (100, 0, 235, 10)
 
 
+def test_locate_tolerates_case_in_long_sentence():
+    """The LLM may capitalize the first word of a sentence-long error."""
+    stream = [
+        Word(text="Création", bbox=(0, 0, 50, 10), page_index=0),
+        Word(text="et", bbox=(55, 0, 75, 10), page_index=0),
+        Word(text="industrialisation", bbox=(80, 0, 160, 10), page_index=0),
+        Word(text="d'une", bbox=(165, 0, 195, 10), page_index=0),  # lowercase d
+        Word(text="pipeline.", bbox=(200, 0, 260, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="D'une pipeline",  # capital D, the LLM echoed with sentence case
+        correction="d'un pipeline",
+        description="x",
+        type="accord",
+        context_before="",
+    )
+    located = locate_mistake(m, words=stream)
+    assert located is not None
+    assert located.bbox == (165, 0, 260, 10)
+
+
+def test_locate_tolerates_curly_vs_straight_apostrophe():
+    """LLM may normalize ' to ’ when echoing, but the PDF kept the ASCII form."""
+    stream = [
+        Word(text="Développement", bbox=(0, 0, 70, 10), page_index=0),
+        Word(text="d'automatisation", bbox=(75, 0, 175, 10), page_index=0),  # ASCII apostrophe
+        Word(text="SAP", bbox=(180, 0, 205, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="d’automatisation SAP",  # curly apostrophe from the LLM
+        correction="d’automatisation SAP",
+        description="x",
+        type="orthographe",
+        context_before="Développement",
+    )
+    located = locate_mistake(m, words=stream)
+    assert located is not None
+    assert located.bbox == (75, 0, 205, 10)
+
+
 def test_locate_returns_none_when_error_repeats_and_context_mismatches():
     """Strategy 3 only fires for unique error_text; otherwise None."""
     stream = [

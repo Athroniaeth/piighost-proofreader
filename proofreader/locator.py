@@ -7,6 +7,18 @@ from proofreader.pdf_render import Word
 
 _PUNCT = ".,;:!?\"'()[]{}«»"
 
+# Map typographic quotes to their ASCII equivalents so LLM-normalized
+# strings ("d’automatisation") match PyMuPDF tokens that preserve the
+# original character ("d'automatisation") and vice versa.
+_QUOTE_MAP = str.maketrans(
+    {
+        "’": "'",
+        "‘": "'",
+        "“": '"',
+        "”": '"',
+    }
+)
+
 
 @dataclass(frozen=True)
 class LocatedMistake:
@@ -53,7 +65,15 @@ def locate_mistake(mistake: Mistake, *, words: list[Word]) -> LocatedMistake | N
 
 
 def _normalize(token: str) -> str:
-    return token.strip(_PUNCT)
+    """Casefold, map typographic quotes to ASCII, strip surrounding punctuation.
+
+    Three independent forms of LLM/PDF drift are absorbed in one pass:
+    case (the LLM may capitalize the first word of a sentence-long
+    error_text), curly-vs-straight apostrophes (the LLM may emit ’ when
+    the PDF has ' or vice versa), and trailing punctuation that PyMuPDF
+    attaches to tokens.
+    """
+    return token.translate(_QUOTE_MAP).casefold().strip(_PUNCT)
 
 
 def _match_window(
