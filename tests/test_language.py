@@ -18,3 +18,11 @@ def test_detect_fallback_on_empty():
 
 def test_detect_fallback_on_garbage():
     assert detect_language("xxx zzz qqq") == "en"
+
+
+def test_detect_respects_sample_chars():
+    head = "Voici un exemple de texte en français avec quelques mots typiques. " * 3
+    tail = "x" * 5000
+    text = head + tail
+    # Without truncation the garbage would dominate; with sample_chars=200 we only see French.
+    assert detect_language(text, sample_chars=200) == "fr"
