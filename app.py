@@ -58,6 +58,8 @@ async def _run_pipeline(pdf_bytes: bytes, pdf_path: Path) -> dict:
             update={
                 "error_text": await client.deanonymize(m.error_text, thread_id=thread_id),
                 "context_before": await client.deanonymize(m.context_before, thread_id=thread_id),
+                "correction": await client.deanonymize(m.correction, thread_id=thread_id),
+                "description": await client.deanonymize(m.description, thread_id=thread_id),
             }
         )
         for page_index in range(doc.page_count):
@@ -76,9 +78,9 @@ def _render_page(
     page_png = doc.render_page(page_index)
     page_w, page_h = doc.page_size(page_index)
     highlights = [
-        HighlightSpec(bbox=lm.word.bbox, is_active=(i == active_idx))
+        HighlightSpec(bbox=lm.bbox, is_active=(i == active_idx))
         for i, lm in enumerate(located)
-        if lm.word.page_index == page_index
+        if lm.page_index == page_index
     ]
     return overlay_highlights(
         page_png,
