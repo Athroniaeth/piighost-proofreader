@@ -102,3 +102,66 @@ def test_locate_multi_word_with_context():
     located = locate_mistake(m, words=stream)
     assert located is not None
     assert located.bbox == (65, 0, 190, 10)
+
+
+def test_locate_tolerates_trailing_punctuation_in_stream():
+    """PyMuPDF attaches trailing punctuation to tokens; LLM context drops it."""
+    stream = [
+        Word(text="suivre", bbox=(0, 0, 30, 10), page_index=0),
+        Word(text="métriques", bbox=(35, 0, 85, 10), page_index=0),
+        Word(text="et", bbox=(90, 0, 100, 10), page_index=0),
+        Word(text="la", bbox=(105, 0, 115, 10), page_index=0),
+        Word(text="collecte", bbox=(120, 0, 160, 10), page_index=0),
+        Word(text="des", bbox=(165, 0, 180, 10), page_index=0),
+        Word(text="retours", bbox=(185, 0, 220, 10), page_index=0),
+        Word(text="métiers.", bbox=(225, 0, 260, 10), page_index=0),  # trailing period
+    ]
+    m = Mistake(
+        error_text="la collecte des retours métiers",  # no period
+        correction="x",
+        description="x",
+        type="accord",
+        context_before="suivre métriques et",
+    )
+    located = locate_mistake(m, words=stream)
+    assert located is not None
+    assert located.bbox == (105, 0, 260, 10)
+
+
+def test_locate_falls_back_to_unique_error_when_context_is_wrong():
+    """LLM may anchor on a word from another column; if the error is unique, use it."""
+    stream = [
+        Word(text="Malt", bbox=(0, 0, 30, 10), page_index=0),  # sidebar landmark
+        Word(text="Création", bbox=(100, 0, 150, 10), page_index=0),
+        Word(text="d'API", bbox=(155, 0, 180, 10), page_index=0),
+        Word(text="consommé", bbox=(185, 0, 235, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="Création d'API consommé",
+        correction="x",
+        description="x",
+        type="accord",
+        context_before="Malt",  # wrong: stream has many words between Malt and the error
+    )
+    located = locate_mistake(m, words=stream)
+    assert located is not None
+    # Strategy 3 falls back on the unique occurrence ignoring the context.
+    assert located.bbox == (100, 0, 235, 10)
+
+
+def test_locate_returns_none_when_error_repeats_and_context_mismatches():
+    """Strategy 3 only fires for unique error_text; otherwise None."""
+    stream = [
+        Word(text="alpha", bbox=(0, 0, 30, 10), page_index=0),
+        Word(text="repeated", bbox=(35, 0, 75, 10), page_index=0),
+        Word(text="beta", bbox=(80, 0, 110, 10), page_index=0),
+        Word(text="repeated", bbox=(115, 0, 155, 10), page_index=0),
+    ]
+    m = Mistake(
+        error_text="repeated",
+        correction="x",
+        description="x",
+        type="orthographe",
+        context_before="gamma",  # not in stream at all
+    )
+    assert locate_mistake(m, words=stream) is None

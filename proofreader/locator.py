@@ -1,8 +1,11 @@
 """Locate a Mistake (error_text + context_before) inside the PyMuPDF word stream."""
+
 from dataclasses import dataclass
 
 from proofreader.models import Mistake
 from proofreader.pdf_render import Word
+
+_PUNCT = ".,;:!?\"'()[]{}«»"
 
 
 @dataclass(frozen=True)
@@ -13,33 +16,88 @@ class LocatedMistake:
 
 
 def locate_mistake(mistake: Mistake, *, words: list[Word]) -> LocatedMistake | None:
-    """Return a LocatedMistake matching ``error_text`` after ``context_before``.
+    """Find the page region matching the mistake.
 
-    ``error_text`` may span multiple whitespace-separated tokens. The
-    returned bbox is the union of all matched word bboxes on the same page.
+    Three strategies, tried in order:
 
-    If ``context_before`` is empty, we return the first occurrence of the
-    error token sequence. If a context is given, we require it to match
-    before the error. If no match is found, returns None.
+    1. Strict whole-word match of ``context_before`` followed by ``error_text``.
+    2. Same but punctuation-tolerant (trailing/leading punctuation stripped
+       on both the LLM tokens and the PyMuPDF tokens before comparison).
+    3. If ``error_text`` appears exactly once anywhere in the stream
+       (punctuation-tolerant), return that single occurrence regardless of
+       context. Catches LLM context drift across multi-column layouts.
+
+    Returns ``None`` if no strategy finds a match.
     """
-    ctx_tokens = mistake.context_before.split()
     err_tokens = mistake.error_text.split()
+    if not err_tokens:
+        return None
+    ctx_tokens = mistake.context_before.split()
+
+    # Strategy 1: strict.
+    matched = _match_window(ctx_tokens, err_tokens, words, normalize=False)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 2: punctuation-tolerant.
+    matched = _match_window(ctx_tokens, err_tokens, words, normalize=True)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 3: error-only unique match, punctuation-tolerant.
+    matched = _find_error_alone_if_unique(err_tokens, words)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    return None
+
+
+def _normalize(token: str) -> str:
+    return token.strip(_PUNCT)
+
+
+def _match_window(
+    ctx_tokens: list[str],
+    err_tokens: list[str],
+    words: list[Word],
+    *,
+    normalize: bool,
+) -> list[Word] | None:
+    """Sliding-window match of context+error. Returns the matched error words or None."""
     n_ctx = len(ctx_tokens)
     n_err = len(err_tokens)
-    if n_err == 0:
-        return None
-
+    if normalize:
+        ctx_cmp = [_normalize(t) for t in ctx_tokens]
+        err_cmp = [_normalize(t) for t in err_tokens]
+        words_cmp = [_normalize(w.text) for w in words]
+    else:
+        ctx_cmp = ctx_tokens
+        err_cmp = err_tokens
+        words_cmp = [w.text for w in words]
     for i in range(len(words) - n_ctx - n_err + 1):
-        if n_ctx > 0:
-            ctx_window = [w.text for w in words[i : i + n_ctx]]
-            if ctx_window != ctx_tokens:
-                continue
-        err_start = i + n_ctx
-        err_window = words[err_start : err_start + n_err]
-        if [w.text for w in err_window] != err_tokens:
+        if n_ctx > 0 and words_cmp[i : i + n_ctx] != ctx_cmp:
             continue
-        return _build_located(mistake, err_window)
+        err_start = i + n_ctx
+        if words_cmp[err_start : err_start + n_err] != err_cmp:
+            continue
+        return list(words[err_start : err_start + n_err])
     return None
+
+
+def _find_error_alone_if_unique(
+    err_tokens: list[str], words: list[Word]
+) -> list[Word] | None:
+    """Return the unique occurrence of err_tokens, or None if zero / multiple."""
+    n_err = len(err_tokens)
+    err_cmp = [_normalize(t) for t in err_tokens]
+    words_cmp = [_normalize(w.text) for w in words]
+    match: list[Word] | None = None
+    for i in range(len(words) - n_err + 1):
+        if words_cmp[i : i + n_err] == err_cmp:
+            if match is not None:
+                return None  # second occurrence, ambiguous
+            match = list(words[i : i + n_err])
+    return match
 
 
 def _build_located(mistake: Mistake, matched: list[Word]) -> LocatedMistake:
