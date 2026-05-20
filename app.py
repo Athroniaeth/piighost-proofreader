@@ -52,6 +52,7 @@ async def _run_pipeline(pdf_bytes: bytes, pdf_path: Path) -> dict:
     result = await proofread(markdown=anonymized, language=language, chain=chain)
     located: list[LocatedMistake] = []
     unlocatable = []
+    mistakes_clean = []
     doc = PdfDocument(pdf_path)
     for m in result.mistakes:
         m_clean = m.model_copy(
@@ -62,6 +63,7 @@ async def _run_pipeline(pdf_bytes: bytes, pdf_path: Path) -> dict:
                 "description": await client.deanonymize(m.description, thread_id=thread_id),
             }
         )
+        mistakes_clean.append(m_clean)
         for page_index in range(doc.page_count):
             hit = locate_mistake(m_clean, words=list(doc.words(page_index)))
             if hit is not None:
@@ -69,7 +71,18 @@ async def _run_pipeline(pdf_bytes: bytes, pdf_path: Path) -> dict:
                 break
         else:
             unlocatable.append(m_clean)
-    return {"doc": doc, "located": located, "unlocatable": unlocatable, "language": language}
+    return {
+        "doc": doc,
+        "located": located,
+        "unlocatable": unlocatable,
+        "language": language,
+        # Debug payload (rendered conditionally by the UI).
+        "markdown_raw": markdown,
+        "markdown_anonymized": anonymized,
+        "mistakes_raw": list(result.mistakes),
+        "mistakes_clean": mistakes_clean,
+        "thread_id": thread_id,
+    }
 
 
 def _render_page(
@@ -90,10 +103,76 @@ def _render_page(
     )
 
 
+def _render_debug_section(outcome: dict) -> None:
+    """Show pipeline intermediates so the user can diagnose why a mistake is missing."""
+    st.divider()
+    st.subheader("Debug")
+    st.caption(
+        f"language={outcome['language']}, thread_id={outcome['thread_id']}, "
+        f"raw mistakes={len(outcome['mistakes_raw'])}, "
+        f"located={len(outcome['located'])}, "
+        f"unlocatable={len(outcome['unlocatable'])}"
+    )
+
+    with st.expander("Markdown extracted from the PDF (sent to anonymizer)", expanded=False):
+        st.code(outcome["markdown_raw"], language="markdown")
+
+    with st.expander("Anonymized Markdown (sent to the LLM)", expanded=False):
+        st.code(outcome["markdown_anonymized"], language="markdown")
+
+    with st.expander("Raw LLM mistakes (before deanonymization)", expanded=False):
+        if outcome["mistakes_raw"]:
+            st.dataframe(
+                [m.model_dump() for m in outcome["mistakes_raw"]],
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.info("LLM returned no mistakes.")
+
+    with st.expander("Deanonymized mistakes (after the entity replacement)", expanded=False):
+        if outcome["mistakes_clean"]:
+            st.dataframe(
+                [m.model_dump() for m in outcome["mistakes_clean"]],
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.info("Nothing to deanonymize.")
+
+    doc: PdfDocument = outcome["doc"]
+    with st.expander("Word stream per page (PyMuPDF, used by the locator)", expanded=False):
+        for page_index in range(doc.page_count):
+            words = doc.words(page_index)
+            st.caption(f"Page {page_index + 1}, {len(words)} words")
+            st.dataframe(
+                [
+                    {
+                        "text": w.text,
+                        "x0": round(w.bbox[0], 1),
+                        "y0": round(w.bbox[1], 1),
+                        "x1": round(w.bbox[2], 1),
+                        "y1": round(w.bbox[3], 1),
+                    }
+                    for w in words
+                ],
+                use_container_width=True,
+                hide_index=True,
+                height=240,
+            )
+
+
 def main() -> None:
     st.set_page_config(page_title="piighost-proofreader", layout="wide")
     st.title("piighost-proofreader")
     st.caption("Upload a CV, get an LLM-powered proofreading pass with click-to-highlight.")
+
+    with st.sidebar:
+        debug_mode = st.toggle(
+            "Debug mode",
+            value=False,
+            help="Show the extracted Markdown, the anonymized prompt, the raw LLM output, and the word stream the locator sees.",
+        )
 
     upload = st.file_uploader("PDF du CV", type=["pdf"])
     if upload is None:
@@ -151,6 +230,9 @@ def main() -> None:
         for page_index in range(doc.page_count):
             png = _render_page(doc, page_index, located, active_idx)
             st.image(png, caption=f"Page {page_index + 1}", use_column_width=True)
+
+    if debug_mode:
+        _render_debug_section(outcome)
 
 
 if __name__ == "__main__":
