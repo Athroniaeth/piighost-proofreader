@@ -26,10 +26,10 @@ async def test_anonymize_returns_anonymized_text(client: AnonymizationClient):
 
 @respx.mock
 async def test_deanonymize_returns_original_text(client: AnonymizationClient):
-    respx.post("http://localhost:8000/v1/deanonymize").mock(
+    respx.post("http://localhost:8000/v1/deanonymize/entities").mock(
         return_value=httpx.Response(
             200,
-            json={"text": "Hello Patrick", "entities": []},
+            json={"text": "Hello Patrick"},
         )
     )
     result = await client.deanonymize("Hello <<PERSON:1>>", thread_id="t1")

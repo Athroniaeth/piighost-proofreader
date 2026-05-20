@@ -18,7 +18,14 @@ class AnonymizationClient:
         return await self._call("/v1/anonymize", text, thread_id, response_key="anonymized_text")
 
     async def deanonymize(self, text: str, *, thread_id: str) -> str:
-        return await self._call("/v1/deanonymize", text, thread_id, response_key="text")
+        # /v1/deanonymize/entities does token-based replacement on any text,
+        # while /v1/deanonymize is cache-keyed on the full anonymized text
+        # and 404s on substrings. We pass substrings (Mistake.error_text,
+        # context_before, correction, description), so we need the entity
+        # endpoint.
+        return await self._call(
+            "/v1/deanonymize/entities", text, thread_id, response_key="text"
+        )
 
     async def _call(self, path: str, text: str, thread_id: str, *, response_key: str) -> str:
         async with httpx.AsyncClient(timeout=self._timeout) as http:
