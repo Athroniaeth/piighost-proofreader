@@ -1,4 +1,5 @@
 """Locate a Mistake (error_text + context_before) inside the PyMuPDF word stream."""
+
 from dataclasses import dataclass
 
 from proofreader.models import Mistake

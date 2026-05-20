@@ -1,4 +1,5 @@
 """Tests for language detection."""
+
 from proofreader.language import detect_language
 
 

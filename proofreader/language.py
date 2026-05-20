@@ -1,4 +1,5 @@
 """Language detection helper."""
+
 from lingua import Language, LanguageDetectorBuilder
 
 _DETECTOR = (

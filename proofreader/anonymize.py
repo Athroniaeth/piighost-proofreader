@@ -1,4 +1,5 @@
 """HTTP client for piighost-api anonymization endpoints."""
+
 import httpx
 
 

@@ -1,4 +1,5 @@
 """Tests for the PIL highlight overlay."""
+
 from io import BytesIO
 
 from PIL import Image

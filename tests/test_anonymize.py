@@ -1,4 +1,5 @@
 """Tests for the piighost-api HTTP client."""
+
 import httpx
 import pytest
 import respx

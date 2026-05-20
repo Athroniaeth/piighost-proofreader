@@ -1,7 +1,8 @@
 """Tests for PyMuPDF page render and word stream extraction."""
+
 from pathlib import Path
 
-from proofreader.pdf_render import PdfDocument, Word
+from proofreader.pdf_render import PdfDocument
 
 
 def test_word_stream_has_known_words(tiny_pdf_path: Path):

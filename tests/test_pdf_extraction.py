@@ -1,4 +1,5 @@
 """Tests for PDF → Markdown extraction via opendataloader-pdf."""
+
 from pathlib import Path
 
 import pytest

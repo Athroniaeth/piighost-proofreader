@@ -1,4 +1,5 @@
 """Tests for the Mistake / ProofreadResult schema."""
+
 import pytest
 from pydantic import ValidationError
 

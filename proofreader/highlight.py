@@ -1,4 +1,5 @@
 """Draw semi-transparent highlight rectangles over a rendered PDF page."""
+
 from dataclasses import dataclass
 from io import BytesIO
 

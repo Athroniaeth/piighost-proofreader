@@ -1,4 +1,5 @@
 """Streamlit entry point for piighost-proofreader."""
+
 from __future__ import annotations
 
 import asyncio
@@ -69,7 +70,9 @@ async def _run_pipeline(pdf_bytes: bytes, pdf_path: Path) -> dict:
     return {"doc": doc, "located": located, "unlocatable": unlocatable, "language": language}
 
 
-def _render_page(doc: PdfDocument, page_index: int, located: list[LocatedMistake], active_idx: int | None) -> bytes:
+def _render_page(
+    doc: PdfDocument, page_index: int, located: list[LocatedMistake], active_idx: int | None
+) -> bytes:
     page_png = doc.render_page(page_index)
     page_w, page_h = doc.page_size(page_index)
     highlights = [

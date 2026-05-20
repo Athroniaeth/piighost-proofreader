@@ -1,4 +1,5 @@
 """PyMuPDF wrapper, renders pages and exposes the word stream."""
+
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path

@@ -1,4 +1,5 @@
 """LangChain + LiteLLM proofreading chain with structured output."""
+
 from typing import Protocol
 
 from langchain_core.prompts import ChatPromptTemplate

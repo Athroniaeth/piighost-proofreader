@@ -1,5 +1,6 @@
 """Tests for the mistake locator."""
-from proofreader.locator import LocatedMistake, locate_mistake
+
+from proofreader.locator import locate_mistake
 from proofreader.models import Mistake
 from proofreader.pdf_render import Word
 
