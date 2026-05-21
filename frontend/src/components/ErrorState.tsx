@@ -55,6 +55,13 @@ const PRESETS: Record<
     tone: "amber",
     action: "Réessayer",
   },
+  internal: {
+    icon: "⚠️",
+    title: "Erreur interne",
+    body: (d) => d?.message ?? "Une erreur inattendue s'est produite.",
+    tone: "red",
+    action: "Retour",
+  },
 };
 
 export default function ErrorState({ reason, details, onReset }: Props) {

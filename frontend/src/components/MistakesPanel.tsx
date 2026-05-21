@@ -1,4 +1,4 @@
-import type { LocatedMistake } from "@/lib/types";
+import type { LocatedMistake, ProgressStep } from "@/lib/types";
 import type { MistakesState, MistakesAction } from "@/hooks/useMistakesStore";
 import MistakeCard from "./MistakeCard";
 import { Checkbox } from "@/components/tailgrids/core/checkbox";
@@ -7,17 +7,24 @@ interface Props {
   mistakes: LocatedMistake[];
   state: MistakesState;
   dispatch: (action: MistakesAction) => void;
+  streaming: boolean;
+  progress: ProgressStep;
 }
 
-export default function MistakesPanel({ mistakes, state, dispatch }: Props) {
-  if (mistakes.length === 0) {
+const PROGRESS_LABEL: Record<ProgressStep, string> = {
+  extracted: "Anonymisation…",
+  anonymized: "Génération des fautes…",
+  "llm-started": "Génération des fautes…",
+  done: "",
+};
+
+export default function MistakesPanel({ mistakes, state, dispatch, streaming, progress }: Props) {
+  if (mistakes.length === 0 && !streaming) {
     return (
       <div className="h-full flex items-center justify-center px-8">
         <div className="text-center max-w-[240px]">
           <div className="text-3xl mb-3">✅</div>
-          <div className="text-lg font-semibold mb-2">
-            Aucune faute détectée
-          </div>
+          <div className="text-lg font-semibold mb-2">Aucune faute détectée</div>
           <div className="text-base text-text-100 leading-relaxed">
             Le LLM a analysé votre CV et n'a rien trouvé à corriger.
           </div>
@@ -27,16 +34,14 @@ export default function MistakesPanel({ mistakes, state, dispatch }: Props) {
   }
 
   const visible = state.enabled.filter(Boolean).length;
-  const allChecked = visible === mistakes.length;
+  const allChecked = mistakes.length > 0 && visible === mistakes.length;
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-1 pb-3 border-b border-base-100">
         <Checkbox
           checked={allChecked}
-          onChange={() =>
-            dispatch({ type: "SET_ALL", enabled: !allChecked })
-          }
+          onChange={() => dispatch({ type: "SET_ALL", enabled: !allChecked })}
         />
         <span className="text-xs text-text-100">Tout cocher / décocher</span>
         <span className="text-xs text-text-100 ml-auto">
@@ -56,6 +61,12 @@ export default function MistakesPanel({ mistakes, state, dispatch }: Props) {
           onActivate={() => dispatch({ type: "SET_ACTIVE", index: i })}
         />
       ))}
+      {streaming && (
+        <div className="flex items-center gap-2 mt-3 p-2 rounded-md bg-background-soft-50 text-xs text-text-100">
+          <span className="inline-block w-3 h-3 border-2 border-base-100 border-t-foreground-100 rounded-full animate-spin" />
+          {PROGRESS_LABEL[progress]}
+        </div>
+      )}
     </div>
   );
 }

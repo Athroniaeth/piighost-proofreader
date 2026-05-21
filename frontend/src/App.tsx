@@ -1,47 +1,68 @@
 import { useEffect } from "react";
-import { useAppState } from "@/hooks/useAppState";
+import { useAppState, type AppAction } from "@/hooks/useAppState";
 import { fakeMode } from "@/hooks/useDebugMode";
+import { useResultStream } from "@/hooks/useResultStream";
 import EmptyState from "@/components/EmptyState";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ResultsState from "@/components/ResultsState";
 import sampleResult from "@/fixtures/sample-result.json";
-import type { ProofreadResult } from "@/lib/types";
+import samplePdfUrl from "@/fixtures/sample-cv.pdf?url";
+import type { LocatedMistake, ProofreadResult } from "@/lib/types";
+
+async function simulateStream(
+  dispatch: (action: AppAction) => void,
+  empty: boolean
+) {
+  const res = sampleResult as unknown as Omit<ProofreadResult, "unlocatable"> & {
+    mistakes: LocatedMistake[];
+  };
+  const pdfResponse = await fetch(samplePdfUrl);
+  const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+  dispatch({ type: "UPLOAD_STARTED", filename: res.filename });
+  dispatch({
+    type: "STREAM_META",
+    meta: {
+      filename: res.filename,
+      language: res.language,
+      page_count: res.page_count,
+      page_sizes: res.page_sizes,
+      thread_id: res.thread_id ?? "fake",
+    },
+    pdfBytes,
+  });
+  dispatch({ type: "STREAM_PROGRESS", step: "extracted" });
+  await new Promise((r) => setTimeout(r, 100));
+  dispatch({ type: "STREAM_PROGRESS", step: "anonymized" });
+  await new Promise((r) => setTimeout(r, 100));
+  dispatch({ type: "STREAM_PROGRESS", step: "llm-started" });
+  const mistakes = empty ? [] : res.mistakes;
+  for (const m of mistakes) {
+    await new Promise((r) => setTimeout(r, 150));
+    dispatch({ type: "STREAM_MISTAKE", mistake: m });
+  }
+  dispatch({
+    type: "STREAM_DONE",
+    counts: { mistake_count: mistakes.length, unlocatable_count: 0 },
+  });
+}
 
 export default function App() {
   const [state, dispatch] = useAppState();
+  const startStream = useResultStream(dispatch);
 
-  // ?fake=1 → fixture as-is. ?fake=empty → same PDF but no mistakes.
   useEffect(() => {
     if (state.kind !== "empty") return;
     const mode = fakeMode();
     if (mode === "off") return;
-    const base = sampleResult as ProofreadResult;
-    const data: ProofreadResult =
-      mode === "empty" ? { ...base, mistakes: [] } : base;
-    dispatch({ type: "RESULT_RECEIVED", data });
+    simulateStream(dispatch, mode === "empty");
   }, [state.kind, dispatch]);
-
-  // After upload, fake the backend roundtrip with a 1 s timer.
-  useEffect(() => {
-    if (state.kind !== "loading") return;
-    const timer = setTimeout(() => {
-      const data: ProofreadResult = {
-        ...(sampleResult as ProofreadResult),
-        filename: state.filename,
-      };
-      dispatch({ type: "RESULT_RECEIVED", data });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [state, dispatch]);
 
   switch (state.kind) {
     case "empty":
       return (
         <EmptyState
-          onFile={(file) =>
-            dispatch({ type: "UPLOAD_STARTED", filename: file.name })
-          }
+          onFile={(file) => startStream(file, false)}
           onReject={(r) => {
             if (r.reason === "too-large") {
               dispatch({
@@ -67,7 +88,13 @@ export default function App() {
       );
     case "results":
       return (
-        <ResultsState data={state.data} onReset={() => dispatch({ type: "RESET" })} />
+        <ResultsState
+          data={state.data}
+          pdfBytes={state.pdfBytes}
+          streaming={state.streaming}
+          progress={state.progress}
+          onReset={() => dispatch({ type: "RESET" })}
+        />
       );
   }
 }
