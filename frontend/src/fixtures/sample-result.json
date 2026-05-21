@@ -1,0 +1,88 @@
+{
+  "language": "fr",
+  "filename": "fake-cv.pdf",
+  "page_count": 1,
+  "page_sizes": [
+    {
+      "page": 0,
+      "width_pt": 595.0,
+      "height_pt": 842.0
+    }
+  ],
+  "mistakes": [
+    {
+      "error_text": "exemple",
+      "correction": "exemple correct",
+      "description": "Démonstration d'orthographe.",
+      "type": "orthographe",
+      "context_before": "Voici un",
+      "page": 0,
+      "bbox": [
+        125.69001007080078,
+        84.94999694824219,
+        178.59600830078125,
+        104.18599700927734
+      ]
+    },
+    {
+      "error_text": "mot mot",
+      "correction": "un mot",
+      "description": "Répétition à corriger.",
+      "type": "grammaire",
+      "context_before": "simple avec",
+      "page": 0,
+      "bbox": [
+        260.2859802246094,
+        84.94999694824219,
+        310.85394287109375,
+        104.18599700927734
+      ]
+    },
+    {
+      "error_text": "phrase",
+      "correction": "phrase finale",
+      "description": "Précision manquante.",
+      "type": "ponctuation",
+      "context_before": "dans une",
+      "page": 0,
+      "bbox": [
+        376.2339172363281,
+        84.94999694824219,
+        422.92388916015625,
+        104.18599700927734
+      ]
+    },
+    {
+      "error_text": "ortho",
+      "correction": "orthographe",
+      "description": "Abréviation à éviter.",
+      "type": "orthographe",
+      "context_before": "Une faute",
+      "page": 0,
+      "bbox": [
+        136.59600830078125,
+        114.94999694824219,
+        168.5019989013672,
+        134.18600463867188
+      ]
+    },
+    {
+      "error_text": "la",
+      "correction": "là",
+      "description": "Accent grave manquant.",
+      "type": "accord",
+      "context_before": "et une autre",
+      "page": 0,
+      "bbox": [
+        268.1119689941406,
+        114.94999694824219,
+        282.8959655761719,
+        134.18600463867188
+      ]
+    }
+  ],
+  "pdf_base64": "JVBERi0xLjcKJcK1wrYKJSBXcml0dGVuIGJ5IE11UERGIDEuMjcuMgoKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFIvSW5mbzw8L1Byb2R1Y2VyKE11UERGIDEuMjcuMik+Pj4+CmVuZG9iagoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1s0IDAgUl0+PgplbmRvYmoKCjMgMCBvYmoKPDwvRm9udDw8L2hlbHYgNSAwIFI+Pj4+CmVuZG9iagoKNCAwIG9iago8PC9UeXBlL1BhZ2UvTWVkaWFCb3hbMCAwIDU5NSA4NDJdL1JvdGF0ZSAwL1Jlc291cmNlcyAzIDAgUi9QYXJlbnQgMiAwIFIvQ29udGVudHNbNiAwIFIgNyAwIFJdPj4KZW5kb2JqCgo1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYS9FbmNvZGluZy9XaW5BbnNpRW5jb2Rpbmc+PgplbmRvYmoKCjYgMCBvYmoKPDwvTGVuZ3RoIDExOS9GaWx0ZXIvRmxhdGVEZWNvZGU+PgpzdHJlYW0KeNpFTLsKAkEM7PMV+QOT7GZyB2Ih2NgdbHdYebtYaGHj9xu0OKaYFzP0pnMjZUkoh3FU4/aiw6M/P6yV2+D16MDAjILZJBzdBB4THFsI7vBMs9sdNJBtSbVh5OXOFYoe5f/zWwqmsFyUdP10a1e6NFroC3iAIuAKZW5kc3RyZWFtCmVuZG9iagoKNyAwIG9iago8PC9MZW5ndGggMTA1L0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp42jXKsQrDMAwE0F1foT+IpcSnGEqHQJZuBW2lU7DJkAxZ+v0VhnDDPbijixYn4RQRNmUTZT9p2OvxY5nYG38eOaMiawIglm3qbqahGS1cMKJEx6bJ7nf/mnZvEK3Pr79odXrTHzPjGpAKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDgKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDQyIDAwMDAwIG4gCjAwMDAwMDAxMjAgMDAwMDAgbiAKMDAwMDAwMDE3MiAwMDAwMCBuIAowMDAwMDAwMjEzIDAwMDAwIG4gCjAwMDAwMDAzMjYgMDAwMDAgbiAKMDAwMDAwMDQxNSAwMDAwMCBuIAowMDAwMDAwNjAzIDAwMDAwIG4gCgp0cmFpbGVyCjw8L1NpemUgOC9Sb290IDEgMCBSL0lEWzxDM0FDQzI5REMzQUQwMUMyQjcxN0MzQjRDMkE3QzI4OT48QTI3RDRCQTVEOEZFNTQ5NkE5OEFBREY1Mzk3RTg1Qzc+XT4+CnN0YXJ0eHJlZgo3NzcKJSVFT0YK",
+  "markdown_raw": "Voici un exemple simple avec mot mot dans une phrase.\nUne faute ortho ici et une autre la.",
+  "markdown_anonymized": "Voici un exemple simple avec mot mot dans une phrase.\nUne faute ortho ici et une autre la.",
+  "thread_id": "fake-thread-0001"
+}
