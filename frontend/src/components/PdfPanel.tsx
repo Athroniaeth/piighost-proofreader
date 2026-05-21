@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
 import HighlightOverlay, { type OverlayVariant } from "./HighlightOverlay";
 import type { LocatedMistake, PageDetection } from "@/lib/types";
 
