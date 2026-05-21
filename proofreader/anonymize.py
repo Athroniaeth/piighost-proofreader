@@ -31,14 +31,17 @@ class AnonymizationClient:
         """Run PII detection without anonymising. Returns flat list of detections.
 
         Each item has: text, label, start_pos, end_pos, confidence.
+
+        piighost-api `/v1/detect` returns `start_pos`/`end_pos` flat on each
+        Detection (not nested under `position`), so we forward them as-is.
         """
         body = await self._post_json("/v1/detect", {"text": text, "thread_id": thread_id})
         return [
             {
                 "text": d["text"],
                 "label": d["label"],
-                "start_pos": d["position"]["start_pos"],
-                "end_pos": d["position"]["end_pos"],
+                "start_pos": d["start_pos"],
+                "end_pos": d["end_pos"],
                 "confidence": d["confidence"],
             }
             for entity in body.get("entities", [])
@@ -50,12 +53,13 @@ class AnonymizationClient:
     ) -> None:
         """PUT the corrected detections to piighost-api so the next anonymize()
         respects them. ``detections`` is a list of dicts with keys text, label,
-        start_pos, end_pos, confidence."""
+        start_pos, end_pos, confidence — sent flat (matches the GET shape)."""
         payload_detections = [
             {
                 "text": d["text"],
                 "label": d["label"],
-                "position": {"start_pos": d["start_pos"], "end_pos": d["end_pos"]},
+                "start_pos": d["start_pos"],
+                "end_pos": d["end_pos"],
                 "confidence": d["confidence"],
             }
             for d in detections

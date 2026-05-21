@@ -10,22 +10,24 @@ from proofreader.anonymize import AnonymizationClient
 @pytest.mark.asyncio
 async def test_detect_returns_flat_detections():
     client = AnonymizationClient(base_url="http://fake")
+    # Mirrors the real piighost-api /v1/detect shape: start_pos/end_pos are
+    # flat on each Detection, not nested under `position`.
     payload = {
         "entities": [
             {
                 "label": "PERSON",
                 "detections": [
                     {"text": "Pierre", "label": "PERSON",
-                     "position": {"start_pos": 0, "end_pos": 6}, "confidence": 0.99},
+                     "start_pos": 0, "end_pos": 6, "confidence": 0.99},
                     {"text": "Pierre", "label": "PERSON",
-                     "position": {"start_pos": 50, "end_pos": 56}, "confidence": 0.95},
+                     "start_pos": 50, "end_pos": 56, "confidence": 0.95},
                 ],
             },
             {
                 "label": "LOCATION",
                 "detections": [
                     {"text": "Lyon", "label": "LOCATION",
-                     "position": {"start_pos": 30, "end_pos": 34}, "confidence": 0.88},
+                     "start_pos": 30, "end_pos": 34, "confidence": 0.88},
                 ],
             },
         ]
@@ -63,7 +65,8 @@ async def test_override_detections_sends_put_with_detections_array():
     assert body["thread_id"] == "t1"
     assert len(body["detections"]) == 2
     assert body["detections"][0]["text"] == "Acme"
-    assert body["detections"][0]["position"]["start_pos"] == 5
+    assert body["detections"][0]["start_pos"] == 5
+    assert body["detections"][0]["end_pos"] == 9
 
 
 @pytest.mark.asyncio
