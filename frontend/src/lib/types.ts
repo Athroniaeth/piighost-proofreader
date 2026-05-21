@@ -15,8 +15,6 @@ export interface Mistake {
   context_before: string;
 }
 
-// Backend (phase 2) will additionally attach the located bbox + page to each
-// mistake. Phase 1 fixtures already include them so the frontend can render.
 export interface LocatedMistake extends Mistake {
   page: number;
   bbox: [number, number, number, number]; // (x0, y0, x1, y1) in PDF points
@@ -28,13 +26,15 @@ export interface PageSize {
   height_pt: number;
 }
 
+export type ProgressStep = "extracted" | "anonymized" | "llm-started" | "done";
+
 export interface ProofreadResult {
   language: string;
   filename: string;
   page_count: number;
   page_sizes: PageSize[];
   mistakes: LocatedMistake[];
-  pdf_base64: string;
+  unlocatable: Mistake[];
   markdown_raw?: string;
   markdown_anonymized?: string;
   thread_id?: string;
