@@ -76,7 +76,9 @@ export default function App() {
           }}
         />
       );
-    case "loading":
+    case "loading-detect":
+    case "reviewing":
+    case "loading-proofread":
       return <LoadingState />;
     case "error":
       return (
