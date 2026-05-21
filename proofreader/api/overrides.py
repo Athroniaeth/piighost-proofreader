@@ -15,6 +15,12 @@ class OverrideEntry(BaseModel):
 
 
 def _find_all_occurrences(needle: str, haystack: str) -> list[tuple[int, int]]:
+    if not needle:
+        # `str.find("", x)` returns 0 indefinitely → infinite loop. Empty
+        # needles should never reach here in practice (the frontend enforces
+        # a 2-char minimum on user selections), but guard anyway since an
+        # OverrideEntry with text="" is constructible.
+        return []
     out: list[tuple[int, int]] = []
     start = 0
     while True:
