@@ -46,6 +46,12 @@ export interface OverrideEntry {
   text: string;
   label: string;
   remove?: boolean;
+  // Frontend-only hint: where the user's selection landed on the PDF.
+  // Used by applyOverrides to render the blue highlight immediately in
+  // review mode. The backend ignores these fields — it re-locates all
+  // occurrences from the markdown via markdown.find().
+  page?: number;
+  bbox?: [number, number, number, number];
 }
 
 export interface DetectPiiResponse {

@@ -18,8 +18,8 @@ export function applyOverrides(
       start_pos: -1,
       end_pos: -1,
       confidence: 1.0,
-      page: -1,
-      bbox: null,
+      page: o.page ?? -1,
+      bbox: o.bbox ?? null,
       manual: true,
     }));
   return [...kept, ...added];

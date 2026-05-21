@@ -26,7 +26,11 @@ export default function ReviewState({
     [detections, pendingOverrides]
   );
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [pickerText, setPickerText] = useState<string>("");
+  const [picker, setPicker] = useState<{
+    text: string;
+    page?: number;
+    bbox?: [number, number, number, number];
+  }>({ text: "" });
 
   return (
     <div className="min-h-screen flex flex-col max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
@@ -43,7 +47,9 @@ export default function ReviewState({
             pageSizes={page_sizes}
             variant="detection"
             enableTextLayer
-            onTextSelection={(t) => setPickerText(t)}
+            onTextSelection={(t, hint) =>
+              setPicker({ text: t, page: hint?.page, bbox: hint?.bbox })
+            }
             items={finalDetections.map((d) => ({ kind: "detection" as const, d }))}
             activeIndex={activeIndex}
           />
@@ -64,14 +70,20 @@ export default function ReviewState({
         </div>
       </div>
       <LabelPickerModal
-        open={pickerText.length > 0}
-        text={pickerText}
+        open={picker.text.length > 0}
+        text={picker.text}
         labels={labelsState.labels}
         onPick={(label) => {
-          dispatch({ type: "OVERRIDE_ADD", text: pickerText, label });
-          setPickerText("");
+          dispatch({
+            type: "OVERRIDE_ADD",
+            text: picker.text,
+            label,
+            page: picker.page,
+            bbox: picker.bbox,
+          });
+          setPicker({ text: "" });
         }}
-        onClose={() => setPickerText("")}
+        onClose={() => setPicker({ text: "" })}
       />
     </div>
   );

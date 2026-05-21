@@ -73,7 +73,13 @@ export type AppState =
 export type AppAction =
   | { type: "UPLOAD_STARTED"; filename: string }
   | { type: "DETECT_LOADED"; payload: DetectPiiResponse; file: File; pdfBytes: Uint8Array }
-  | { type: "OVERRIDE_ADD"; text: string; label: string }
+  | {
+      type: "OVERRIDE_ADD";
+      text: string;
+      label: string;
+      page?: number;
+      bbox?: [number, number, number, number];
+    }
   | { type: "OVERRIDE_REMOVE_DETECTION"; detection: PageDetection }
   | { type: "OVERRIDE_RELABEL"; detection: PageDetection; newLabel: string }
   | { type: "REVIEW_SUBMIT" }
@@ -116,7 +122,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         pendingOverrides: [
           ...state.pendingOverrides,
-          { text: action.text, label: action.label },
+          {
+            text: action.text,
+            label: action.label,
+            page: action.page,
+            bbox: action.bbox,
+          },
         ],
       };
 

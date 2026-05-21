@@ -18,7 +18,10 @@ interface Props {
   // enableTextLayer is now a no-op: @react-pdf-viewer renders its text layer
   // by default so text selection always works without extra configuration.
   enableTextLayer?: boolean;
-  onTextSelection?: (text: string) => void;
+  onTextSelection?: (
+    text: string,
+    hint?: { page: number; bbox: [number, number, number, number] }
+  ) => void;
 }
 
 export default function PdfPanel({
@@ -54,12 +57,60 @@ export default function PdfPanel({
       if (!sel || sel.isCollapsed) return;
       const text = sel.toString().replace(/\s+/g, " ").trim();
       if (text.length < 2) return;
-      onTextSelection(text);
+
+      // Compute a (page, bbox) hint from the DOM selection so the override
+      // can be drawn on the PDF immediately. We locate the page by finding
+      // the HighlightOverlay (data-pdf-page-index) whose bounding rect
+      // contains the selection center.
+      let hint: { page: number; bbox: [number, number, number, number] } | undefined;
+      try {
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const pageEls = document.querySelectorAll<HTMLElement>(
+            "[data-pdf-page-index]"
+          );
+          for (const el of pageEls) {
+            const pageRect = el.getBoundingClientRect();
+            if (
+              cx >= pageRect.left &&
+              cx <= pageRect.right &&
+              cy >= pageRect.top &&
+              cy <= pageRect.bottom
+            ) {
+              const pageIndex = Number(el.dataset.pdfPageIndex);
+              const sizePt = pageSizes.find((s) => s.page === pageIndex);
+              if (sizePt && pageRect.width > 0 && pageRect.height > 0) {
+                const xRatio = (rect.left - pageRect.left) / pageRect.width;
+                const yRatio = (rect.top - pageRect.top) / pageRect.height;
+                const wRatio = rect.width / pageRect.width;
+                const hRatio = rect.height / pageRect.height;
+                hint = {
+                  page: pageIndex,
+                  bbox: [
+                    xRatio * sizePt.width_pt,
+                    yRatio * sizePt.height_pt,
+                    (xRatio + wRatio) * sizePt.width_pt,
+                    (yRatio + hRatio) * sizePt.height_pt,
+                  ],
+                };
+              }
+              break;
+            }
+          }
+        }
+      } catch {
+        // Selection doesn't have a range we can read — fall back to no hint.
+      }
+
+      onTextSelection(text, hint);
       sel.removeAllRanges();
     };
     document.addEventListener("mouseup", handler);
     return () => document.removeEventListener("mouseup", handler);
-  }, [onTextSelection]);
+  }, [onTextSelection, pageSizes]);
 
   // Pre-compute overlay specs once (same logic as before).
   const overlaySpecs = items

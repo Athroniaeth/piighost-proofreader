@@ -49,7 +49,10 @@ export default function HighlightOverlay({
   const colors = COLORS[variant];
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div
+      className="absolute inset-0 pointer-events-none"
+      data-pdf-page-index={pageIndex}
+    >
       {items.map((item, idx) => {
         if (item.page !== pageIndex) return null;
         const [x0, y0, x1, y1] = item.bbox;
