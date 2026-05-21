@@ -1,0 +1,78 @@
+import { useMemo, useState } from "react";
+import { applyOverrides } from "@/lib/overrides";
+import { useLabels } from "@/hooks/useLabels";
+import type { AppAction } from "@/hooks/useAppState";
+import type { PageDetection, PageSize } from "@/lib/types";
+import PdfPanel from "./PdfPanel";
+import DetectionsPanel from "./DetectionsPanel";
+import LabelPickerModal from "./LabelPickerModal";
+import ReviewTopBar from "./ReviewTopBar";
+
+interface Props {
+  filename: string;
+  pdfBytes: Uint8Array;
+  page_sizes: PageSize[];
+  detections: PageDetection[];
+  pendingOverrides: import("@/lib/types").OverrideEntry[];
+  dispatch: (action: AppAction) => void;
+}
+
+export default function ReviewState({
+  filename, pdfBytes, page_sizes, detections, pendingOverrides, dispatch,
+}: Props) {
+  const labelsState = useLabels();
+  const finalDetections = useMemo(
+    () => applyOverrides(detections, pendingOverrides),
+    [detections, pendingOverrides]
+  );
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [pickerText, setPickerText] = useState<string>("");
+
+  return (
+    <div className="min-h-screen flex flex-col max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 lg:py-10">
+      <ReviewTopBar
+        filename={filename}
+        count={finalDetections.length}
+        onCancel={() => dispatch({ type: "RESET" })}
+        onValidate={() => dispatch({ type: "REVIEW_SUBMIT" })}
+      />
+      <div className="lg:flex-1 flex flex-col lg:flex-row gap-6 lg:min-h-0">
+        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-6 min-h-[60vh] lg:min-h-0">
+          <PdfPanel
+            pdfBytes={pdfBytes}
+            pageSizes={page_sizes}
+            variant="detection"
+            enableTextLayer
+            onTextSelection={(t) => setPickerText(t)}
+            items={finalDetections.map((d) => ({ kind: "detection" as const, d }))}
+            activeIndex={activeIndex}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
+          <DetectionsPanel
+            detections={finalDetections}
+            labels={labelsState.labels}
+            activeIndex={activeIndex}
+            onActivate={(i) => setActiveIndex(i === activeIndex ? null : i)}
+            onRemove={(d) =>
+              dispatch({ type: "OVERRIDE_REMOVE_DETECTION", detection: d })
+            }
+            onRelabel={(d, newLabel) =>
+              dispatch({ type: "OVERRIDE_RELABEL", detection: d, newLabel })
+            }
+          />
+        </div>
+      </div>
+      <LabelPickerModal
+        open={pickerText.length > 0}
+        text={pickerText}
+        labels={labelsState.labels}
+        onPick={(label) => {
+          dispatch({ type: "OVERRIDE_ADD", text: pickerText, label });
+          setPickerText("");
+        }}
+        onClose={() => setPickerText("")}
+      />
+    </div>
+  );
+}
