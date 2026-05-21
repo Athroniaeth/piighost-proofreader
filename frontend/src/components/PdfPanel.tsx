@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
@@ -31,22 +31,18 @@ export default function PdfPanel({
   enableTextLayer: _enableTextLayer,
   onTextSelection,
 }: Props) {
-  // Convert Uint8Array to a stable blob URL so the viewer doesn't reload on
-  // every render. The URL is revoked when the component unmounts or pdfBytes
-  // changes.
-  const blobUrl = useMemo(
-    // Cast pdfBytes.buffer to ArrayBuffer to satisfy strict TypeScript — the
-    // underlying buffer is always a plain ArrayBuffer in practice here.
-    () =>
-      URL.createObjectURL(
-        new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
-      ),
-    [pdfBytes]
-  );
+  // Create the blob URL inside the effect so its lifetime matches the cleanup.
+  // This avoids a StrictMode race where useMemo's URL gets revoked while
+  // @react-pdf-viewer is still fetching it, surfacing as ERR_FILE_NOT_FOUND.
+  const [blobUrl, setBlobUrl] = useState<string>("");
 
   useEffect(() => {
-    return () => URL.revokeObjectURL(blobUrl);
-  }, [blobUrl]);
+    const url = URL.createObjectURL(
+      new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
+    );
+    setBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pdfBytes]);
 
   // Text-selection handler: fires on mouseup anywhere in the document.
   // We always attach it when onTextSelection is provided because the
@@ -77,6 +73,8 @@ export default function PdfPanel({
       return { page: it.d.page, bbox: it.d.bbox };
     })
     .filter((s): s is { page: number; bbox: [number, number, number, number] } => s !== null);
+
+  if (!blobUrl) return null;
 
   return (
     // The viewer fills its parent container. The parent in ResultsState /
