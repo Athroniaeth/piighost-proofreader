@@ -62,7 +62,7 @@ export default function App() {
     case "empty":
       return (
         <EmptyState
-          onFile={(file) => startStream(file, isDebugAvailable())}
+          onFile={(file) => startStream(file, "", [], isDebugAvailable())}
           onReject={(r) => {
             if (r.reason === "too-large") {
               dispatch({

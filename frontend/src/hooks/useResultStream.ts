@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { parseSSE } from "@/lib/parseSSE";
 import type { AppAction, ErrorReason } from "./useAppState";
-import type { LocatedMistake, Mistake } from "@/lib/types";
+import type { LocatedMistake, Mistake, OverrideEntry } from "@/lib/types";
 
 interface MetaData {
   filename: string;
@@ -19,11 +19,17 @@ interface DebugData {
 
 export function useResultStream(dispatch: (action: AppAction) => void) {
   return useCallback(
-    async (file: File, debug: boolean) => {
-      dispatch({ type: "UPLOAD_STARTED", filename: file.name });
+    async (
+      file: File,
+      thread_id: string,
+      overrides: OverrideEntry[],
+      debug: boolean
+    ) => {
       const pdfBytes = new Uint8Array(await file.arrayBuffer());
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("thread_id", thread_id);
+      formData.append("overrides", JSON.stringify(overrides));
       const url = `/api/proofread${debug ? "?debug=1" : ""}`;
 
       let response: Response;
@@ -67,22 +73,13 @@ export function useResultStream(dispatch: (action: AppAction) => void) {
             });
             break;
           case "mistake":
-            dispatch({
-              type: "STREAM_MISTAKE",
-              mistake: event.data as LocatedMistake,
-            });
+            dispatch({ type: "STREAM_MISTAKE", mistake: event.data as LocatedMistake });
             break;
           case "unlocatable":
-            dispatch({
-              type: "STREAM_UNLOCATABLE",
-              mistake: event.data as Mistake,
-            });
+            dispatch({ type: "STREAM_UNLOCATABLE", mistake: event.data as Mistake });
             break;
           case "debug":
-            dispatch({
-              type: "STREAM_DEBUG",
-              debug: event.data as DebugData,
-            });
+            dispatch({ type: "STREAM_DEBUG", debug: event.data as DebugData });
             break;
           case "done":
             dispatch({
