@@ -24,7 +24,7 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
   }, [data.mistakes.length, dispatch]);
 
   return (
-    <div className="min-h-screen flex flex-col max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 lg:py-10">
+    <div className="min-h-screen flex flex-col max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
       <TopBar
         filename={data.filename}
         mistakeCount={data.mistakes.length}
@@ -35,8 +35,8 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
         onReset={onReset}
       />
       {debug.available && debug.visible && <DebugPanel data={data} />}
-      <div className="lg:flex-1 flex flex-col lg:flex-row gap-6 lg:min-h-0">
-        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-6 min-h-[60vh] lg:min-h-0">
+      <div className="lg:flex-1 flex flex-col lg:flex-row gap-4 lg:min-h-0">
+        <div className="lg:flex-[2] overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-4 min-h-[60vh] lg:min-h-0">
           <PdfPanel
             pdfBytes={pdfBytes}
             pageSizes={data.page_sizes}
@@ -49,7 +49,7 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
             activeIndex={mistakesState.activeIndex}
           />
         </div>
-        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
+        <div className="lg:flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
           <MistakesPanel
             mistakes={data.mistakes}
             state={mistakesState}

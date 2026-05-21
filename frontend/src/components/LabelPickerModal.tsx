@@ -15,8 +15,10 @@ export default function LabelPickerModal({
   const [selected, setSelected] = useState<string>("");
 
   useEffect(() => {
-    if (open) setSelected("");
-  }, [open]);
+    // Pre-select the first label so the "Ajouter" button is enabled by
+    // default — the user can still pick another one before confirming.
+    if (open) setSelected(labels[0] ?? "");
+  }, [open, labels]);
 
   if (!open) return null;
 

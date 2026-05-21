@@ -29,15 +29,15 @@ export default function ReviewState({
   const [pickerText, setPickerText] = useState<string>("");
 
   return (
-    <div className="min-h-screen flex flex-col max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 lg:py-10">
+    <div className="min-h-screen flex flex-col max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
       <ReviewTopBar
         filename={filename}
         count={finalDetections.length}
         onCancel={() => dispatch({ type: "RESET" })}
         onValidate={() => dispatch({ type: "REVIEW_SUBMIT" })}
       />
-      <div className="lg:flex-1 flex flex-col lg:flex-row gap-6 lg:min-h-0">
-        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-6 min-h-[60vh] lg:min-h-0">
+      <div className="lg:flex-1 flex flex-col lg:flex-row gap-4 lg:min-h-0">
+        <div className="lg:flex-[2] overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-4 min-h-[60vh] lg:min-h-0">
           <PdfPanel
             pdfBytes={pdfBytes}
             pageSizes={page_sizes}
@@ -48,7 +48,7 @@ export default function ReviewState({
             activeIndex={activeIndex}
           />
         </div>
-        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
+        <div className="lg:flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
           <DetectionsPanel
             detections={finalDetections}
             labels={labelsState.labels}
