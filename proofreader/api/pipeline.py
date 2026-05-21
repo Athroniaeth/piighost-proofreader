@@ -13,7 +13,7 @@ from proofreader.api.errors import NoTextLayerError
 from proofreader.api.sse import format_sse
 from proofreader.language import detect_language
 from proofreader.llm import stream_mistakes
-from proofreader.locator import LocatedMistake, locate_mistake
+from proofreader.locator import LocatedMistake, find_all_substring_spans, locate_mistake
 from proofreader.models import Mistake
 from proofreader.pdf_extraction import extract_markdown
 from proofreader.pdf_render import PdfDocument, Word
@@ -41,6 +41,25 @@ async def deanonymize_mistake(
             "context_before": context_before,
         }
     )
+
+
+def locate_detection(text: str, *, all_words: dict[int, list[Word]]) -> list[dict]:
+    """Return all (page, bbox) hits for `text` across the document.
+
+    Each hit is a dict {page, bbox} suitable for JSON serialisation.
+    """
+    hits: list[dict] = []
+    tokens = text.split()
+    for page_index in sorted(all_words):
+        for match in find_all_substring_spans(tokens, all_words[page_index]):
+            if not match:
+                continue
+            x0 = min(w.bbox[0] for w in match)
+            y0 = min(w.bbox[1] for w in match)
+            x1 = max(w.bbox[2] for w in match)
+            y1 = max(w.bbox[3] for w in match)
+            hits.append({"page": page_index, "bbox": [x0, y0, x1, y1]})
+    return hits
 
 
 def locate_in_any_page(

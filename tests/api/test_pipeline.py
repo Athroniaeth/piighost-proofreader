@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import fitz
 
-from proofreader.api.pipeline import deanonymize_mistake, locate_in_any_page, run_pipeline
+from proofreader.api.pipeline import deanonymize_mistake, locate_detection, locate_in_any_page, run_pipeline
 from proofreader.models import Mistake
 from proofreader.pdf_render import PdfDocument
 
@@ -137,6 +137,25 @@ async def test_run_pipeline_emits_meta_progress_mistake_done(tiny_pdf_bytes):
     assert meta["language"] == "fr"
     assert meta["page_count"] == 1
     assert meta["filename"] == "t.pdf"
+
+
+def test_locate_detection_returns_one_entry_per_occurrence(tmp_path):
+    pdf_path = tmp_path / "tiny.pdf"
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text(
+        (72, 100), "Pierre travaille avec Pierre dupont", fontsize=12
+    )
+    doc.save(pdf_path)
+    doc.close()
+    pdf = PdfDocument(pdf_path)
+    all_words = {p: list(pdf.words(p)) for p in range(pdf.page_count)}
+
+    hits = locate_detection("Pierre", all_words=all_words)
+    assert len(hits) == 2
+    for h in hits:
+        assert h["page"] == 0
+        assert h["bbox"][2] > h["bbox"][0]
 
 
 async def test_run_pipeline_emits_debug_when_requested(tiny_pdf_bytes):
