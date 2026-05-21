@@ -38,3 +38,40 @@ async def test_detect_returns_flat_detections():
     assert out[0]["text"] == "Pierre"
     assert out[0]["start_pos"] == 0
     assert out[2]["label"] == "LOCATION"
+
+
+@pytest.mark.asyncio
+async def test_override_detections_sends_put_with_detections_array():
+    client = AnonymizationClient(base_url="http://fake")
+    detections = [
+        {"text": "Acme", "label": "ORG", "start_pos": 5, "end_pos": 9, "confidence": 1.0},
+        {"text": "John", "label": "PERSON", "start_pos": 20, "end_pos": 24, "confidence": 1.0},
+    ]
+    captured: dict = {}
+
+    def capture(request):
+        captured["json"] = request.read()
+        return httpx.Response(200, json={})
+
+    with respx.mock:
+        respx.put("http://fake/v1/detect").mock(side_effect=capture)
+        await client.override_detections("hi Acme and John", detections, thread_id="t1")
+
+    import json as _json
+    body = _json.loads(captured["json"])
+    assert body["text"] == "hi Acme and John"
+    assert body["thread_id"] == "t1"
+    assert len(body["detections"]) == 2
+    assert body["detections"][0]["text"] == "Acme"
+    assert body["detections"][0]["position"]["start_pos"] == 5
+
+
+@pytest.mark.asyncio
+async def test_get_labels_returns_label_list():
+    client = AnonymizationClient(base_url="http://fake")
+    with respx.mock:
+        respx.get("http://fake/v1/config").respond(
+            json={"labels": ["PERSON", "LOCATION", "EMAIL"], "placeholder_factory": "x"}
+        )
+        labels = await client.get_labels()
+    assert labels == ["PERSON", "LOCATION", "EMAIL"]

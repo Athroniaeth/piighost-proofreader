@@ -54,6 +54,47 @@ class AnonymizationClient:
             for d in entity.get("detections", [])
         ]
 
+    async def override_detections(
+        self, text: str, detections: list[dict], *, thread_id: str
+    ) -> None:
+        """PUT the corrected detections to piighost-api so the next anonymize()
+        respects them. ``detections`` is a list of dicts with keys text, label,
+        start_pos, end_pos, confidence."""
+        payload_detections = [
+            {
+                "text": d["text"],
+                "label": d["label"],
+                "position": {"start_pos": d["start_pos"], "end_pos": d["end_pos"]},
+                "confidence": d["confidence"],
+            }
+            for d in detections
+        ]
+        async with httpx.AsyncClient(timeout=self._timeout) as http:
+            try:
+                response = await http.put(
+                    f"{self._base_url}/v1/detect",
+                    json={
+                        "text": text,
+                        "thread_id": thread_id,
+                        "detections": payload_detections,
+                    },
+                )
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise AnonymizeError(
+                    f"piighost-api PUT /v1/detect failed: {exc}"
+                ) from exc
+
+    async def get_labels(self) -> list[str]:
+        """Return the configured label set from piighost-api."""
+        async with httpx.AsyncClient(timeout=self._timeout) as http:
+            try:
+                response = await http.get(f"{self._base_url}/v1/config")
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise AnonymizeError(f"piighost-api /v1/config failed: {exc}") from exc
+        return list(response.json().get("labels") or [])
+
     async def _call(self, path: str, text: str, thread_id: str, *, response_key: str) -> str:
         async with httpx.AsyncClient(timeout=self._timeout) as http:
             try:
