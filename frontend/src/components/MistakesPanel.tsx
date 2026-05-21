@@ -55,7 +55,7 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
         <MistakeCard
           key={i}
           mistake={m}
-          enabled={state.enabled[i]}
+          enabled={state.enabled[i] ?? true}
           active={state.activeIndex === i}
           onToggle={() => dispatch({ type: "TOGGLE", index: i })}
           onActivate={() => dispatch({ type: "SET_ACTIVE", index: i })}

@@ -24,46 +24,37 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
   }, [data.mistakes.length, dispatch]);
 
   return (
-    <>
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 lg:py-10">
-        <TopBar
-          filename={data.filename}
-          mistakeCount={data.mistakes.length}
-          streaming={streaming}
-          onReset={onReset}
-        />
-        <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-200px)]">
-          <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-6 min-h-[60vh] lg:min-h-0">
-            <PdfPanel
-              pdfBytes={pdfBytes}
-              pageSizes={data.page_sizes}
-              mistakes={data.mistakes}
-              enabled={mistakesState.enabled}
-              activeIndex={mistakesState.activeIndex}
-            />
-          </div>
-          <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
-            <MistakesPanel
-              mistakes={data.mistakes}
-              state={mistakesState}
-              dispatch={dispatch}
-              streaming={streaming}
-              progress={progress}
-            />
-          </div>
+    <div className="min-h-screen flex flex-col max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 lg:py-10">
+      <TopBar
+        filename={data.filename}
+        mistakeCount={data.mistakes.length}
+        streaming={streaming}
+        debugAvailable={debug.available}
+        debugVisible={debug.visible}
+        onToggleDebug={debug.toggle}
+        onReset={onReset}
+      />
+      {debug.available && debug.visible && <DebugPanel data={data} />}
+      <div className="lg:flex-1 flex flex-col lg:flex-row gap-6 lg:min-h-0">
+        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-6 min-h-[60vh] lg:min-h-0">
+          <PdfPanel
+            pdfBytes={pdfBytes}
+            pageSizes={data.page_sizes}
+            mistakes={data.mistakes}
+            enabled={mistakesState.enabled}
+            activeIndex={mistakesState.activeIndex}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto bg-background-50 border border-base-100 rounded-xl p-5 min-h-[40vh] lg:min-h-0">
+          <MistakesPanel
+            mistakes={data.mistakes}
+            state={mistakesState}
+            dispatch={dispatch}
+            streaming={streaming}
+            progress={progress}
+          />
         </div>
       </div>
-
-      {debug.visible && <DebugPanel data={data} />}
-
-      <button
-        type="button"
-        onClick={debug.toggle}
-        title="Toggle debug panel"
-        className="fixed bottom-4 right-4 px-3 py-1.5 text-xs rounded-md bg-foreground-100 text-white-100 opacity-30 hover:opacity-100 transition-opacity"
-      >
-        Debug
-      </button>
-    </>
+    </div>
   );
 }

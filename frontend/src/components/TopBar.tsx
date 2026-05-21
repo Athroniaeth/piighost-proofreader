@@ -5,10 +5,21 @@ interface Props {
   filename: string;
   mistakeCount: number;
   streaming: boolean;
+  debugAvailable: boolean;
+  debugVisible: boolean;
+  onToggleDebug: () => void;
   onReset: () => void;
 }
 
-export default function TopBar({ filename, mistakeCount, streaming, onReset }: Props) {
+export default function TopBar({
+  filename,
+  mistakeCount,
+  streaming,
+  debugAvailable,
+  debugVisible,
+  onToggleDebug,
+  onReset,
+}: Props) {
   let badge;
   if (streaming) {
     badge = (
@@ -31,9 +42,21 @@ export default function TopBar({ filename, mistakeCount, streaming, onReset }: P
         <span className="font-semibold">{filename}</span>
         {badge}
       </div>
-      <Button variant="primary" appearance="outline" size="sm" onClick={onReset}>
-        ↻ Nouveau PDF
-      </Button>
+      <div className="flex items-center gap-2">
+        {debugAvailable && (
+          <Button
+            variant="primary"
+            appearance={debugVisible ? "fill" : "outline"}
+            size="sm"
+            onClick={onToggleDebug}
+          >
+            Debug
+          </Button>
+        )}
+        <Button variant="primary" appearance="outline" size="sm" onClick={onReset}>
+          ↻ Nouveau PDF
+        </Button>
+      </div>
     </div>
   );
 }

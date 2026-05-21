@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAppState, type AppAction } from "@/hooks/useAppState";
-import { fakeMode } from "@/hooks/useDebugMode";
+import { fakeMode, isDebugAvailable } from "@/hooks/useDebugMode";
 import { useResultStream } from "@/hooks/useResultStream";
 import EmptyState from "@/components/EmptyState";
 import LoadingState from "@/components/LoadingState";
@@ -62,7 +62,7 @@ export default function App() {
     case "empty":
       return (
         <EmptyState
-          onFile={(file) => startStream(file, false)}
+          onFile={(file) => startStream(file, isDebugAvailable())}
           onReject={(r) => {
             if (r.reason === "too-large") {
               dispatch({

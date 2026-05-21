@@ -36,7 +36,7 @@ export default function DebugPanel({ data }: Props) {
             Markdown extrait
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-            {data.markdown_raw ?? "(non fourni en phase 1)"}
+            {data.markdown_raw ?? "—"}
           </pre>
         </details>
         <details className="mb-2">
@@ -44,7 +44,7 @@ export default function DebugPanel({ data }: Props) {
             Markdown anonymisé (envoyé au LLM)
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-            {data.markdown_anonymized ?? "(non fourni en phase 1)"}
+            {data.markdown_anonymized ?? "—"}
           </pre>
         </details>
         <details className="mb-2">
