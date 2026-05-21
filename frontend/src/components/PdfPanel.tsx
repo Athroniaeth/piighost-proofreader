@@ -89,7 +89,7 @@ export default function PdfPanel({
             const pageHeightPt = sizePt?.height_pt ?? props.height;
 
             return (
-              <div style={{ position: "relative" }}>
+              <>
                 {props.canvasLayer.children}
                 {props.textLayer.children}
                 {props.annotationLayer.children}
@@ -101,7 +101,7 @@ export default function PdfPanel({
                   variant={variant}
                   activeIndex={activeIndex}
                 />
-              </div>
+              </>
             );
           }}
         />
