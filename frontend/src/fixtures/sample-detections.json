@@ -1,0 +1,43 @@
+{
+  "thread_id": "fake-thread-review",
+  "language": "fr",
+  "page_count": 1,
+  "page_sizes": [
+    {
+      "page": 0,
+      "width_pt": 595.0,
+      "height_pt": 842.0
+    }
+  ],
+  "markdown": "Voici un exemple simple avec mot mot dans une phrase.\nUne faute ortho ici et une autre la.",
+  "detections": [
+    {
+      "text": "exemple",
+      "label": "PERSON",
+      "start_pos": 9,
+      "end_pos": 16,
+      "confidence": 0.98,
+      "page": 0,
+      "bbox": [
+        125.69001007080078,
+        84.94999694824219,
+        178.59600830078125,
+        104.18599700927734
+      ]
+    },
+    {
+      "text": "phrase.",
+      "label": "LOCATION",
+      "start_pos": 30,
+      "end_pos": 36,
+      "confidence": 0.9,
+      "page": 0,
+      "bbox": [
+        376.2339172363281,
+        84.94999694824219,
+        422.92388916015625,
+        104.18599700927734
+      ]
+    }
+  ]
+}

@@ -1,17 +1,34 @@
 import { useEffect } from "react";
 import { useAppState, type AppAction } from "@/hooks/useAppState";
 import { fakeMode, isDebugAvailable } from "@/hooks/useDebugMode";
+import { useDetectPii } from "@/hooks/useDetectPii";
 import { useResultStream } from "@/hooks/useResultStream";
 import EmptyState from "@/components/EmptyState";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ResultsState from "@/components/ResultsState";
+import ReviewState from "@/components/ReviewState";
 import sampleResult from "@/fixtures/sample-result.json";
+import sampleDetections from "@/fixtures/sample-detections.json";
 import samplePdfUrl from "@/fixtures/sample-cv.pdf?url";
-import type { LocatedMistake, ProofreadResult } from "@/lib/types";
+import type { DetectPiiResponse, LocatedMistake, ProofreadResult } from "@/lib/types";
 
-async function simulateStream(
-  dispatch: (action: AppAction) => void,
+async function simulateDetect(dispatch: (a: AppAction) => void) {
+  const fakeFile = new File([new Uint8Array(0)], "fake-cv.pdf", { type: "application/pdf" });
+  const pdfResponse = await fetch(samplePdfUrl);
+  const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+  dispatch({ type: "UPLOAD_STARTED", filename: "fake-cv.pdf" });
+  await new Promise((r) => setTimeout(r, 200));
+  dispatch({
+    type: "DETECT_LOADED",
+    payload: sampleDetections as unknown as DetectPiiResponse,
+    file: fakeFile,
+    pdfBytes,
+  });
+}
+
+async function simulateStreamAfterSubmit(
+  dispatch: (a: AppAction) => void,
   empty: boolean
 ) {
   const res = sampleResult as unknown as Omit<ProofreadResult, "unlocatable"> & {
@@ -19,7 +36,6 @@ async function simulateStream(
   };
   const pdfResponse = await fetch(samplePdfUrl);
   const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
-  dispatch({ type: "UPLOAD_STARTED", filename: res.filename });
   dispatch({
     type: "STREAM_META",
     meta: {
@@ -49,20 +65,30 @@ async function simulateStream(
 
 export default function App() {
   const [state, dispatch] = useAppState();
+  const startDetect = useDetectPii(dispatch);
   const startStream = useResultStream(dispatch);
+  const fake = fakeMode();
 
   useEffect(() => {
-    if (state.kind !== "empty") return;
-    const mode = fakeMode();
-    if (mode === "off") return;
-    simulateStream(dispatch, mode === "empty");
-  }, [state.kind, dispatch]);
+    if (state.kind === "empty" && fake !== "off") {
+      simulateDetect(dispatch);
+    }
+  }, [state.kind, fake, dispatch]);
+
+  useEffect(() => {
+    if (state.kind !== "loading-proofread") return;
+    if (fake !== "off") {
+      simulateStreamAfterSubmit(dispatch, fake === "empty");
+    } else {
+      startStream(state.file, state.thread_id, state.overrides, isDebugAvailable());
+    }
+  }, [state, fake, dispatch, startStream]);
 
   switch (state.kind) {
     case "empty":
       return (
         <EmptyState
-          onFile={(file) => startStream(file, "", [], isDebugAvailable())}
+          onFile={(file) => startDetect(file)}
           onReject={(r) => {
             if (r.reason === "too-large") {
               dispatch({
@@ -77,7 +103,18 @@ export default function App() {
         />
       );
     case "loading-detect":
+      return <LoadingState />;
     case "reviewing":
+      return (
+        <ReviewState
+          filename={state.filename}
+          pdfBytes={state.pdfBytes}
+          page_sizes={state.page_sizes}
+          detections={state.detections}
+          pendingOverrides={state.pendingOverrides}
+          dispatch={dispatch}
+        />
+      );
     case "loading-proofread":
       return <LoadingState />;
     case "error":
