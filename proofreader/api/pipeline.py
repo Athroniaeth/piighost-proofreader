@@ -82,6 +82,8 @@ async def run_pipeline(
     litellm_model: str,
     litellm_api_key: str,
     litellm_api_base: str | None,
+    thread_id: str | None = None,
+    overrides: list[dict] | None = None,
 ) -> AsyncIterator[bytes]:
     """Drive the proofreading pipeline and yield formatted SSE events.
 
@@ -89,7 +91,14 @@ async def run_pipeline(
     in-stream failures are propagated as exceptions — the route wrapper
     converts them to `event: error` payloads.
     """
-    thread_id = str(uuid.uuid4())
+    from proofreader.api.overrides import OverrideEntry, apply_overrides
+
+    if thread_id is None:
+        thread_id = str(uuid.uuid4())
+    overrides = overrides or []
+    parsed_overrides = [
+        OverrideEntry(**o) if isinstance(o, dict) else o for o in overrides
+    ]
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as fp:
         fp.write(pdf_bytes)
@@ -120,6 +129,14 @@ async def run_pipeline(
     yield format_sse("progress", {"step": "extracted"})
 
     client = AnonymizationClient(base_url=piighost_api_url)
+
+    # Apply user overrides: re-fetch initial detections, combine with edits,
+    # push the result back via override_detections so the upcoming anonymize()
+    # respects the user's choices.
+    initial = await client.detect(markdown, thread_id=thread_id)
+    final = apply_overrides(initial, parsed_overrides, markdown=markdown)
+    await client.override_detections(markdown, final, thread_id=thread_id)
+
     anonymized = await client.anonymize(markdown, thread_id=thread_id)
     yield format_sse("progress", {"step": "anonymized"})
 

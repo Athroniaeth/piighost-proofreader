@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 import anyio.to_thread
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, Form, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from proofreader.anonymize import AnonymizationClient
@@ -114,8 +114,12 @@ async def detect_pii(file: UploadFile = File(...)):
 @router.post("/proofread")
 async def proofread(
     file: UploadFile = File(...),
+    thread_id: str | None = Form(None),
+    overrides: str | None = Form(None),
     debug: int = Query(0, description="Set ?debug=1 to include the debug event"),
 ):
+    import json as _json
+
     settings = load_settings()
 
     if file.content_type != "application/pdf":
@@ -134,6 +138,8 @@ async def proofread(
             },
         )
 
+    parsed_overrides: list[dict] = _json.loads(overrides) if overrides else []
+
     gen = run_pipeline(
         pdf_bytes=pdf_bytes,
         filename=file.filename or "upload.pdf",
@@ -142,6 +148,8 @@ async def proofread(
         litellm_model=settings.litellm_model,
         litellm_api_key=settings.litellm_api_key,
         litellm_api_base=settings.litellm_api_base,
+        thread_id=thread_id,
+        overrides=parsed_overrides,
     )
     try:
         first = await gen.__anext__()

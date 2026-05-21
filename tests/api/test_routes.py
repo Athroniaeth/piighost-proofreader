@@ -104,3 +104,30 @@ async def test_labels_returns_label_list():
 
     assert response.status_code == 200
     assert response.json() == {"labels": ["PERSON", "EMAIL"]}
+
+
+async def test_proofread_accepts_thread_id_and_overrides_form_fields(tiny_pdf_bytes):
+    canned = [
+        b'event: meta\ndata: {"language":"fr","page_count":1,"page_sizes":[],"thread_id":"x","filename":"t.pdf"}\n\n',
+        b'event: done\ndata: {"mistake_count":0,"unlocatable_count":0}\n\n',
+    ]
+    captured: dict = {}
+
+    async def fake_run_pipeline(**kwargs) -> AsyncIterator[bytes]:
+        captured.update(kwargs)
+        for chunk in canned:
+            yield chunk
+
+    with patch("proofreader.api.routes.run_pipeline", new=fake_run_pipeline):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            files = {"file": ("t.pdf", tiny_pdf_bytes, "application/pdf")}
+            data = {
+                "thread_id": "abc-123",
+                "overrides": '[{"text":"Acme","label":"ORG"}]',
+            }
+            response = await client.post("/api/proofread", files=files, data=data)
+
+    assert response.status_code == 200
+    assert captured["thread_id"] == "abc-123"
+    assert captured["overrides"] == [{"text": "Acme", "label": "ORG"}]

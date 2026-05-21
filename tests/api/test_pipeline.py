@@ -97,6 +97,8 @@ async def test_run_pipeline_emits_meta_progress_mistake_done(tiny_pdf_bytes):
         return_value="Voici un exemple simple avec une petite phrase."
     )
     fake_anon.deanonymize = AsyncMock(side_effect=lambda text, thread_id: text)
+    fake_anon.detect = AsyncMock(return_value=[])
+    fake_anon.override_detections = AsyncMock()
 
     raw_mistakes = [
         Mistake(
@@ -164,6 +166,8 @@ async def test_run_pipeline_emits_debug_when_requested(tiny_pdf_bytes):
         return_value="Voici un exemple simple avec une petite phrase."
     )
     fake_anon.deanonymize = AsyncMock(side_effect=lambda text, thread_id: text)
+    fake_anon.detect = AsyncMock(return_value=[])
+    fake_anon.override_detections = AsyncMock()
 
     with patch(
         "proofreader.api.pipeline.stream_mistakes",
@@ -191,3 +195,50 @@ async def test_run_pipeline_emits_debug_when_requested(tiny_pdf_bytes):
     assert "markdown_raw" in debug_payload
     assert "markdown_anonymized" in debug_payload
     assert "word_stream" in debug_payload
+
+
+async def test_run_pipeline_applies_overrides_before_anonymize(tiny_pdf_bytes):
+    """run_pipeline with overrides must call override_detections with the
+    combined initial + add detections before calling anonymize()."""
+    fake_anon = AsyncMock()
+    fake_anon.detect = AsyncMock(
+        return_value=[
+            {"text": "exemple", "label": "PERSON",
+             "start_pos": 9, "end_pos": 16, "confidence": 0.9},
+        ]
+    )
+    fake_anon.anonymize = AsyncMock(
+        return_value="Voici un exemple simple avec une petite phrase."
+    )
+    fake_anon.deanonymize = AsyncMock(side_effect=lambda text, thread_id: text)
+    fake_anon.override_detections = AsyncMock()
+
+    overrides_in = [{"text": "simple", "label": "ORG", "remove": False}]
+
+    with patch(
+        "proofreader.api.pipeline.stream_mistakes",
+        return_value=_fake_stream([]),
+    ), patch(
+        "proofreader.api.pipeline.AnonymizationClient", return_value=fake_anon
+    ):
+        events = [
+            chunk
+            async for chunk in run_pipeline(
+                pdf_bytes=tiny_pdf_bytes,
+                filename="t.pdf",
+                debug=False,
+                thread_id="t1",
+                overrides=overrides_in,
+                piighost_api_url="http://piighost",
+                litellm_model="gpt-4o-mini",
+                litellm_api_key="x",
+                litellm_api_base=None,
+            )
+        ]
+
+    assert fake_anon.override_detections.await_count == 1
+    args, kwargs = fake_anon.override_detections.await_args
+    sent_detections = args[1] if len(args) > 1 else kwargs["detections"]
+    # initial (1) + add for "simple" found once in the markdown
+    assert len(sent_detections) >= 2
+    assert any(d["label"] == "ORG" for d in sent_detections)
