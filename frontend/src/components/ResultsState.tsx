@@ -40,8 +40,12 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
           <PdfPanel
             pdfBytes={pdfBytes}
             pageSizes={data.page_sizes}
-            mistakes={data.mistakes}
-            enabled={mistakesState.enabled}
+            variant="mistake"
+            items={data.mistakes.map((m, i) => ({
+              kind: "mistake" as const,
+              m,
+              enabled: mistakesState.enabled[i] ?? true,
+            }))}
             activeIndex={mistakesState.activeIndex}
           />
         </div>

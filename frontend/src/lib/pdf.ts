@@ -9,6 +9,8 @@ export interface RenderedPage {
   width: number;
   height: number;
   scale: number;
+  page: import("pdfjs-dist").PDFPageProxy;
+  viewport: import("pdfjs-dist").PageViewport;
 }
 
 export function base64ToBytes(b64: string): Uint8Array {
@@ -22,10 +24,6 @@ export async function renderAllPages(
   bytes: Uint8Array,
   scale = 1.25
 ): Promise<RenderedPage[]> {
-  // Clone the buffer: PDF.js transfers ownership of the ArrayBuffer to its
-  // worker, detaching the original. Without a clone, React 19 StrictMode's
-  // double-mount in dev (or any re-run of this effect) would re-use a
-  // detached buffer and throw DataCloneError.
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
   const pdf = await loadingTask.promise;
   const out: RenderedPage[] = [];
@@ -43,6 +41,8 @@ export async function renderAllPages(
       width: viewport.width,
       height: viewport.height,
       scale,
+      page,
+      viewport,
     });
   }
   return out;

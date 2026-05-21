@@ -1,22 +1,31 @@
 import { useEffect, useState } from "react";
+import * as pdfjsLib from "pdfjs-dist";
 import { renderAllPages, type RenderedPage } from "@/lib/pdf";
-import HighlightOverlay from "./HighlightOverlay";
-import type { LocatedMistake } from "@/lib/types";
+import HighlightOverlay, { type OverlayVariant } from "./HighlightOverlay";
+import type { LocatedMistake, PageDetection } from "@/lib/types";
+
+type Item =
+  | { kind: "mistake"; m: LocatedMistake; enabled: boolean }
+  | { kind: "detection"; d: PageDetection };
 
 interface Props {
   pdfBytes: Uint8Array;
   pageSizes: { page: number; width_pt: number; height_pt: number }[];
-  mistakes: LocatedMistake[];
-  enabled: boolean[];
+  variant: OverlayVariant;
+  items: Item[];
   activeIndex: number | null;
+  enableTextLayer?: boolean;
+  onTextSelection?: (text: string) => void;
 }
 
 export default function PdfPanel({
   pdfBytes,
   pageSizes,
-  mistakes,
-  enabled,
+  variant,
+  items,
   activeIndex,
+  enableTextLayer = false,
+  onTextSelection,
 }: Props) {
   const [pages, setPages] = useState<RenderedPage[]>([]);
 
@@ -27,10 +36,33 @@ export default function PdfPanel({
       if (cancelled) return;
       setPages(rendered);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [pdfBytes]);
+
+  useEffect(() => {
+    if (!enableTextLayer || !onTextSelection) return;
+    const handler = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) return;
+      const text = sel.toString().replace(/\s+/g, " ").trim();
+      if (text.length < 2) return;
+      onTextSelection(text);
+      sel.removeAllRanges();
+    };
+    document.addEventListener("mouseup", handler);
+    return () => document.removeEventListener("mouseup", handler);
+  }, [enableTextLayer, onTextSelection]);
+
+  const overlaySpecs = items
+    .map((it) => {
+      if (it.kind === "mistake") {
+        if (!it.enabled) return null;
+        return { page: it.m.page, bbox: it.m.bbox };
+      }
+      if (it.d.bbox == null) return null;
+      return { page: it.d.page, bbox: it.d.bbox };
+    })
+    .filter((s): s is { page: number; bbox: [number, number, number, number] } => s !== null);
 
   return (
     <div className="space-y-4">
@@ -56,13 +88,14 @@ export default function PdfPanel({
                 }
               }}
             />
+            {enableTextLayer && <TextLayer page={p} />}
             <HighlightOverlay
-              mistakes={mistakes}
-              enabled={enabled}
-              activeIndex={activeIndex}
+              items={overlaySpecs}
               pageIndex={p.pageIndex}
               pageWidthPt={pageWidthPt}
               pageHeightPt={pageHeightPt}
+              variant={variant}
+              activeIndex={activeIndex}
             />
           </div>
         );
@@ -71,5 +104,37 @@ export default function PdfPanel({
         <p className="text-xs text-text-200">Chargement du PDF…</p>
       )}
     </div>
+  );
+}
+
+function TextLayer({ page }: { page: RenderedPage }) {
+  return (
+    <div
+      ref={(container) => {
+        if (!container) return;
+        if (container.dataset.rendered === "1") return;
+        container.innerHTML = "";
+        page.page
+          .getTextContent()
+          .then((textContent) => {
+            const layer = new pdfjsLib.TextLayer({
+              textContentSource: textContent,
+              container,
+              viewport: page.viewport,
+            });
+            return layer.render();
+          })
+          .then(() => {
+            container.dataset.rendered = "1";
+          })
+          .catch(() => { /* swallow */ });
+      }}
+      className="absolute inset-0 opacity-100"
+      style={{
+        color: "transparent",
+        userSelect: "text",
+        pointerEvents: "auto",
+      }}
+    />
   );
 }
