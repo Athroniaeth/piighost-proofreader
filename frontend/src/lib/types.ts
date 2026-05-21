@@ -28,6 +28,35 @@ export interface PageSize {
 
 export type ProgressStep = "extracted" | "anonymized" | "llm-started" | "done";
 
+export interface Detection {
+  text: string;
+  label: string;
+  start_pos: number;
+  end_pos: number;
+  confidence: number;
+}
+
+export interface PageDetection extends Detection {
+  page: number;
+  bbox: [number, number, number, number] | null;
+  manual?: boolean;
+}
+
+export interface OverrideEntry {
+  text: string;
+  label: string;
+  remove?: boolean;
+}
+
+export interface DetectPiiResponse {
+  thread_id: string;
+  language: string;
+  page_count: number;
+  page_sizes: PageSize[];
+  markdown: string;
+  detections: PageDetection[];
+}
+
 export interface ProofreadResult {
   language: string;
   filename: string;
