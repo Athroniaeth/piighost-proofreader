@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { base64ToBytes, renderAllPages, type RenderedPage } from "@/lib/pdf";
+import { renderAllPages, type RenderedPage } from "@/lib/pdf";
 import HighlightOverlay from "./HighlightOverlay";
 import type { LocatedMistake } from "@/lib/types";
 
 interface Props {
-  pdfBase64: string;
+  pdfBytes: Uint8Array;
   pageSizes: { page: number; width_pt: number; height_pt: number }[];
   mistakes: LocatedMistake[];
   enabled: boolean[];
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function PdfPanel({
-  pdfBase64,
+  pdfBytes,
   pageSizes,
   mistakes,
   enabled,
@@ -23,16 +23,14 @@ export default function PdfPanel({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const bytes = base64ToBytes(pdfBase64);
-      // Render at 2× for crisp text — CSS will downscale via width: 100%.
-      const rendered = await renderAllPages(bytes, 2);
+      const rendered = await renderAllPages(pdfBytes, 2);
       if (cancelled) return;
       setPages(rendered);
     })();
     return () => {
       cancelled = true;
     };
-  }, [pdfBase64]);
+  }, [pdfBytes]);
 
   return (
     <div className="space-y-4">
