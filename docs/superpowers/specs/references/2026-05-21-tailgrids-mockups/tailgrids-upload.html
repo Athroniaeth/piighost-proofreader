@@ -1,0 +1,143 @@
+<h2>État 1 — quel block TailGrids file-upload ?</h2>
+<p class="subtitle">5 variants existent dans <code>tailgrids-pro-blocks/src/block/application/file-upload/</code>. Choisis celui dont la structure colle le mieux à notre landing (titre ProofReader + dropzone + disclaimer).</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="file-upload-1" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;padding:16px">
+      <div style="background:#fff;border-radius:12px;padding:4px;border:1px solid #e5e7eb;max-width:280px;margin:0 auto">
+        <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600;font-size:14px">Upload Files</div>
+          <div style="color:#9ca3af;font-size:14px">✕</div>
+        </div>
+        <div style="padding:16px">
+          <div style="border:1px dashed #d1d5db;border-radius:8px;padding:32px 16px;text-align:center">
+            <div style="font-size:24px;margin-bottom:6px">☁️</div>
+            <div style="font-size:11px;font-weight:600;margin-bottom:2px">Drop files here</div>
+            <div style="font-size:10px;color:#9ca3af">or click to browse</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>file-upload-1</h3>
+      <p>Modal compact, dropzone seul + close button. Le plus minimaliste.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="file-upload-2" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;padding:16px">
+      <div style="background:#fff;border-radius:12px;padding:4px;border:1px solid #e5e7eb;max-width:280px;margin:0 auto">
+        <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600;font-size:14px">Upload Files</div>
+          <div style="color:#9ca3af;font-size:14px">✕</div>
+        </div>
+        <div style="padding:16px">
+          <div style="border:1px dashed #d1d5db;border-radius:8px;padding:24px 16px;text-align:center;margin-bottom:8px">
+            <div style="font-size:24px;margin-bottom:6px">☁️</div>
+            <div style="font-size:11px;font-weight:600">Drop here</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid #e5e7eb;border-radius:6px">
+            <div style="background:#dbeafe;color:#1d4ed8;font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600">PDF</div>
+            <div style="font-size:11px">file.pdf · 2.3 Mo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>file-upload-2</h3>
+      <p>Comme #1 + badge "fichier accepté" après upload. Utile si on veut un retour visuel.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="file-upload-3" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;padding:16px">
+      <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;max-width:280px;margin:0 auto">
+        <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:flex-start">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div style="width:36px;height:36px;border:1px solid #e5e7eb;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">☁️</div>
+            <div>
+              <div style="font-weight:600;font-size:13px">Upload Files</div>
+              <div style="font-size:10px;color:#9ca3af">Drag and drop or browse</div>
+            </div>
+          </div>
+          <div style="color:#9ca3af;font-size:13px">✕</div>
+        </div>
+        <div style="padding:16px">
+          <div style="border:1px dashed #d1d5db;border-radius:8px;padding:20px 16px;text-align:center;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600">Drop zone</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:4px">
+            <div style="font-size:11px;flex:1">file.pdf · 65%</div>
+            <div style="color:#ef4444;font-size:12px">🗑</div>
+          </div>
+          <div style="height:3px;background:#e5e7eb;border-radius:2px;overflow:hidden">
+            <div style="width:65%;height:100%;background:#3b82f6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>file-upload-3</h3>
+      <p>Header icône+texte sur 2 lignes (le plus pro), liste fichiers + progress bar. Le plus complet.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="file-upload-4" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;padding:16px">
+      <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;max-width:280px;margin:0 auto">
+        <div style="padding:12px 16px;text-align:center;position:relative">
+          <div style="font-weight:600;font-size:13px">Upload Files</div>
+          <div style="font-size:10px;color:#9ca3af">Drag and drop or browse</div>
+          <div style="position:absolute;top:6px;right:8px;color:#9ca3af;font-size:13px">✕</div>
+        </div>
+        <div style="padding:0 16px 16px">
+          <div style="border:1px dashed #d1d5db;border-radius:8px;padding:24px 16px;text-align:center">
+            <div style="font-size:24px;margin-bottom:4px">☁️</div>
+            <div style="font-size:11px;font-weight:600;margin-bottom:2px">Drop here</div>
+            <div style="font-size:10px;color:#9ca3af">or click to browse</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>file-upload-4</h3>
+      <p>Header centré (titre + sous-titre au milieu), close button absolu en haut à droite. Look "marketing".</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="file-upload-5" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;padding:16px">
+      <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;max-width:280px;margin:0 auto">
+        <div style="padding:12px 16px;position:relative">
+          <div style="font-weight:600;font-size:13px">Upload Files</div>
+          <div style="font-size:10px;color:#9ca3af">Drag and drop or browse</div>
+          <div style="position:absolute;top:6px;right:8px;color:#9ca3af;font-size:13px">✕</div>
+        </div>
+        <div style="padding:0 16px 16px">
+          <div style="border:1px dashed #d1d5db;border-radius:8px;padding:20px 16px;text-align:center;margin-bottom:8px">
+            <div style="font-size:22px;margin-bottom:2px">☁️</div>
+            <div style="font-size:11px;font-weight:600">Drop here</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:4px">
+            <div style="background:#dbeafe;color:#1d4ed8;font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600">PDF</div>
+            <div style="font-size:11px;flex:1">file.pdf · 65%</div>
+            <div style="color:#ef4444;font-size:12px">🗑</div>
+          </div>
+          <div style="height:3px;background:#e5e7eb;border-radius:2px;overflow:hidden">
+            <div style="width:65%;height:100%;background:#3b82f6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>file-upload-5</h3>
+      <p>Combinaison #3 + #4 : header gauche aligné + liste + progress + badge. Le plus chargé.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px">
+  <p class="subtitle" style="font-size:12px;text-align:center"><b>Mon avis</b> : <b>file-upload-1</b> ou <b>file-upload-4</b>. Notre cas (1 PDF, upload immédiat, pas de queue de fichiers) n'a pas besoin de progress bar ni de liste, donc #3 et #5 c'est too much. Entre #1 et #4 : #4 a un header centré qui s'aligne mieux avec notre titre "ProofReader" centré au-dessus. Mais on n'a pas besoin de "Upload Files" titre + sous-titre dans la card puisque ProofReader sert déjà de titre — on peut retirer le header de la card et garder juste le dropzone (façon #1 sans le header).</p>
+</div>

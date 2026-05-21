@@ -1,4 +1,6 @@
-# Frontend TailGrids Implementation Plan
+# Frontend TailGrids Implementation Plan (DEPRECATED — vanilla HTML/JS)
+
+> ⚠️ **DEPRECATED 2026-05-21.** The frontend stack pivoted to React + Vite + TypeScript + TailGrids primitives TSX to leverage the `tailgrids` skill (38 primitives + 410 blocks). The authoritative plan is now **[`2026-05-21-frontend-tailgrids-react.md`](./2026-05-21-frontend-tailgrids-react.md)**. This file is kept for historical context only — do not execute it.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

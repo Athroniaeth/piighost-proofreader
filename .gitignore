@@ -9,3 +9,4 @@ dist/
 *.tmp.pdf
 samples/*.pdf
 !samples/.gitkeep
+.superpowers/

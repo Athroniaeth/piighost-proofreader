@@ -1,10 +1,12 @@
 # Frontend TailGrids — design
 
-**Status :** approved
+**Status :** approved (stack revised 2026-05-21)
 **Date :** 2026-05-21
 **Phase :** 1/3 (frontend) avant FastAPI (phase 2) puis intégration (phase 3)
 **Target directory :** `frontend/` à la racine de `piighost-proofreader`
-**Stack :** HTML + Tailwind CSS + TailGrids vanilla + JS vanilla + PDF.js
+**Stack :** Vite + React 19 + TypeScript + Tailwind CSS 3.4 + TailGrids React primitives + PDF.js
+
+> **Stack revision note (2026-05-21) :** la version initiale de cette spec annonçait du HTML/JS vanilla. Pivot vers React + Vite + TailGrids primitives TSX pour pouvoir exploiter la skill `tailgrids` (38 primitives + 410 blocks pré-composés). Les décisions UX (layouts, états, palette, microcopy) restent inchangées. Voir `docs/superpowers/plans/2026-05-21-frontend-tailgrids-react.md`.
 
 ## Goal
 
@@ -14,7 +16,7 @@ Cette phase 1 livre **un frontend statique avec données mockées** (fakes). Il 
 
 ## Non-goals
 
-- Pas de framework JS (React, Vue, Svelte). HTML + Tailwind + JS vanilla.
+- Pas de SSR ni de Next.js — SPA React pure, builds statiques servables par n'importe quel CDN.
 - Pas d'auth, pas de session, pas de cookies. App publique, rate limit côté backend (LiteLLM).
 - Pas de stockage côté serveur des PDF (privacy first). Tout en mémoire pendant la requête.
 - Pas d'i18n complet en phase 1 : tous les textes en FR « en dur ». L'extraction i18n FR/EN viendra plus tard.
@@ -29,29 +31,44 @@ Single-page. Le layout diffère entre l'état 1 (centrage strict vertical + hori
 
 ```
 frontend/
-├── index.html                  # Page unique (les 2 états sont gérés en JS)
-├── src/
-│   ├── css/
-│   │   └── styles.css          # Tailwind + overrides
-│   ├── js/
-│   │   ├── main.js             # Bootstrap, event handlers globaux
-│   │   ├── upload.js           # Logique dropzone, validation 10 Mo
-│   │   ├── render.js           # PDF.js, rendu pages + overlays bboxes
-│   │   ├── mistakes.js         # Liste fautes, toggle, focus actif
-│   │   ├── debug.js            # Section debug (gated derrière ?debug=1)
-│   │   └── fakes/
-│   │       └── sample-result.json    # Faux résultat pour développer sans backend
-│   └── components/             # Snippets HTML TailGrids inclus à la main
-│       ├── dropzone.html
-│       ├── loader.html
-│       ├── pdf-panel.html
-│       ├── mistakes-panel.html
-│       └── error-states.html
-├── public/
-│   └── pdfjs/                  # pdfjs-dist en static, copié au build
-├── package.json                # tailwindcss + dev server
+├── index.html                     # Vite entry, mounts <div id="root">
+├── vite.config.ts
 ├── tailwind.config.js
-└── postcss.config.js
+├── postcss.config.js
+├── tsconfig.json
+├── package.json                   # vite + react + ts + tailwind + pdfjs-dist + vitest
+├── src/
+│   ├── main.tsx                   # ReactDOM.createRoot + <App />
+│   ├── App.tsx                    # State machine + state-routing
+│   ├── index.css                  # @tailwind directives + global custom rules
+│   ├── components/
+│   │   ├── core/                  # TailGrids primitives installed via CLI (Button, Checkbox, Badge…)
+│   │   ├── EmptyState.tsx         # État 1 (upload landing)
+│   │   ├── LoadingState.tsx       # Spinner + steps
+│   │   ├── ResultsState.tsx       # Container état 2 (TopBar + split panels)
+│   │   ├── ErrorState.tsx         # Carte d'erreur réutilisable
+│   │   ├── TopBar.tsx             # Filename + counter + "Nouveau PDF"
+│   │   ├── PdfPanel.tsx           # PDF.js render + overlay layer
+│   │   ├── HighlightOverlay.tsx   # <div> absolute par bbox
+│   │   ├── MistakesPanel.tsx      # En-tête + liste
+│   │   ├── MistakeCard.tsx        # Une carte (badge + strike + correction + description)
+│   │   └── DebugPanel.tsx         # Section debug gated par ?debug=1
+│   ├── hooks/
+│   │   ├── useAppState.ts         # useReducer pour la state machine
+│   │   ├── useMistakesStore.ts    # toggle + active state
+│   │   └── useDebugMode.ts        # lit ?debug=1 / ?fake=1
+│   ├── lib/
+│   │   ├── upload.ts              # validateFile (TDD)
+│   │   ├── pdf.ts                 # base64ToBytes, renderPdf (PDF.js wrapper)
+│   │   ├── scaling.ts             # scaleBox (bbox PDF pt → px, TDD)
+│   │   └── types.ts               # Mistake, ProofreadResult, MistakeType…
+│   └── fixtures/
+│       └── sample-result.json     # Faux résultat (importé directement, pas via fetch)
+└── tests/                         # Vitest + React Testing Library
+    ├── upload.test.ts
+    ├── scaling.test.ts
+    ├── mistakesStore.test.ts
+    └── appState.test.ts
 ```
 
 ### Les deux états visuels
@@ -156,21 +173,19 @@ Un toggle dev (`?fake=1`) court-circuite l'upload et charge directement ce JSON.
 ## Stack technique
 
 **Build & dev :**
-- `tailwindcss` en CLI (pas de webpack/vite, on garde simple).
+- Vite 5.x avec template `react-ts` pour le bootstrap.
+- React 19 + TypeScript 5.
+- Tailwind CSS 3.4 (PostCSS via plugin Vite, pas de CLI séparé).
 - `tailwind.config.js` avec les couleurs custom (rouge/jaune highlights, vert validation).
-- Dev server : `python -m http.server 5173` ou équivalent, pas de hot-reload nécessaire en phase 1.
-- Build prod : `tailwindcss -o public/css/app.css --minify`.
+- Dev server : `npm run dev` (hot reload natif Vite, port 5173 par défaut).
+- Build prod : `npm run build` → `dist/` static servable par n'importe quel CDN ou Coolify.
+- Tests : Vitest + `@testing-library/react` pour la logique (validation, store, scaling), smoke manuel pour PDF.js et layout.
 
-**TailGrids vanilla** : composants HTML copiés depuis le catalogue, adaptés à nos besoins. Pas d'install npm, juste du copier-coller de snippets Tailwind. Composants attendus :
-- `auth-form`-style card pour la dropzone (état 1).
-- `alert` blocks pour les états d'erreur.
-- `spinner` pour le loader.
-- `checkbox-list` ou pattern custom pour la liste de fautes.
-- `button` (primary, secondary, disabled).
+**TailGrids React primitives** : 38 primitives TSX installables via la CLI TailGrids dans `src/components/core/`. Primitives attendues : `Button`, `Checkbox`, `Badge`, `Modal` (ou `Dialog`), `Alert`, `Spinner`/`Skeleton`, `Tooltip` (éventuel). Les sections complexes (file-upload card, notification list) peuvent être fetchées depuis le catalogue `application/file-upload-1` et `dashboard/notifications-3` puis adaptées.
 
-**JS vanilla** : pas d'Alpine.js, pas de htmx. Les interactions sont assez simples (toggle checkbox, focus card, render PDF.js) pour rester en `document.querySelector` + event listeners.
+**State management** : React `useReducer` pour la state machine (empty / loading / results / error) et un store dérivé pour les mistakes (toggle + active). Pas de Redux, pas de Zustand — la complexité ne le justifie pas.
 
-**PDF.js** : version `pdfjs-dist` en static. Build standalone (worker + main), pas via npm.
+**PDF.js** : `pdfjs-dist` installé via npm (`pdfjs-dist@^4`), worker chargé via `?url` import Vite-natif. Pas de download manuel.
 
 ## Validation phase 1
 

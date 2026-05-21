@@ -1,0 +1,72 @@
+<h2>Quel squelette de page pour la version TailGrids ?</h2>
+<p class="subtitle">Single-page, donc tout sur une seule URL. La question est : comment empiler upload / PDF / liste / debug.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Streamlit-clone, vertical</h3>
+      <p>Header simple en haut, dropzone upload en bande, puis split horizontal PDF (2/3) + liste fautes (1/3), debug en accordéon plié en bas. C'est le plus proche du flow déjà validé.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Option A - flow vertical</div>
+        <div class="mockup-body">
+          <div class="mock-nav">piighost-proofreader</div>
+          <div class="placeholder" style="margin-top:8px;height:48px">Dropzone PDF (centrée, sticky)</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <div class="mock-content" style="flex:2;height:160px">PDF page rendue + overlays</div>
+            <div class="mock-content" style="flex:1;height:160px">Liste fautes cliquables</div>
+          </div>
+          <div class="placeholder" style="margin-top:8px;height:32px">▶ Debug (accordéon fermé)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dashboard sidebar fixe</h3>
+      <p>Sidebar permanente à gauche (upload, settings, debug toggle, model picker), zone principale au centre = PDF + liste empilés ou côte-à-côte. Plus pro, plus "tool". Ajoute du chrome.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Option B - sidebar dashboard</div>
+        <div class="mockup-body">
+          <div style="display:flex;gap:8px">
+            <div class="mock-sidebar" style="height:200px;width:140px">
+              <div style="margin-bottom:8px">📂 Upload</div>
+              <div style="margin-bottom:8px">⚙️ Settings</div>
+              <div style="margin-bottom:8px">🔧 Debug</div>
+              <div>📥 Download dump</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+              <div class="mock-content" style="height:120px">PDF + overlays</div>
+              <div class="mock-content" style="height:72px">Liste fautes (horizontale ou verticale)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hero + cards collapsibles</h3>
+      <p>Grand hero d'upload en haut (drop zone large, model picker, options). Une fois le PDF traité, le hero rétrécit (sticky bar) et révèle une zone "résultats" avec cards (1 par faute) au-dessus du PDF en split horizontal. Plus marketing / landing page.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Option C - hero + cards</div>
+        <div class="mockup-body">
+          <div class="placeholder" style="height:64px">Hero upload (collapse après run)</div>
+          <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto">
+            <div class="placeholder" style="min-width:96px;height:48px">Faute card</div>
+            <div class="placeholder" style="min-width:96px;height:48px">Faute card</div>
+            <div class="placeholder" style="min-width:96px;height:48px">Faute card</div>
+            <div class="placeholder" style="min-width:96px;height:48px">+ N</div>
+          </div>
+          <div class="mock-content" style="margin-top:8px;height:140px">PDF + overlays (pleine largeur)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
