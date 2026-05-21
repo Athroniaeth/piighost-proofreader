@@ -170,3 +170,10 @@ async def proofread(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/labels")
+async def labels():
+    settings = load_settings()
+    client = AnonymizationClient(base_url=settings.piighost_api_url)
+    return {"labels": await client.get_labels()}

@@ -35,7 +35,7 @@ async def test_proofread_rejects_oversized_pdf():
 
 
 from collections.abc import AsyncIterator
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 
 async def test_proofread_streams_sse_events_on_happy_path(tiny_pdf_bytes):
@@ -91,3 +91,16 @@ async def test_proofread_emits_error_event_when_pipeline_fails_mid_stream(tiny_p
     assert b"event: meta" in body
     assert b"event: error" in body
     assert b'"reason":"backend-down"' in body
+
+
+async def test_labels_returns_label_list():
+    fake_anon = AsyncMock()
+    fake_anon.get_labels = AsyncMock(return_value=["PERSON", "EMAIL"])
+
+    with patch("proofreader.api.routes.AnonymizationClient", return_value=fake_anon):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/labels")
+
+    assert response.status_code == 200
+    assert response.json() == {"labels": ["PERSON", "EMAIL"]}
