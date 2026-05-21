@@ -179,6 +179,49 @@ def _find_error_as_substring_if_unique(
     return list(words[start_word : end_word + 1])
 
 
+def find_all_substring_spans(
+    err_tokens: list[str], words: list[Word]
+) -> list[list[Word]]:
+    """Like _find_error_as_substring_if_unique, but yield every match.
+
+    Returns a list of [Word, ...] sublists, each covering one match of
+    the joined normalised err_tokens in the concatenated word stream.
+    """
+    if not words or not err_tokens:
+        return []
+    needle = " ".join(_normalize(t) for t in err_tokens).strip()
+    if len(needle) < _MIN_SUBSTRING_CHARS:
+        return []
+
+    parts: list[str] = []
+    offsets: list[tuple[int, int]] = []
+    cursor = 0
+    for w in words:
+        n = _normalize(w.text)
+        parts.append(n)
+        offsets.append((cursor, cursor + len(n)))
+        cursor += len(n) + 1
+    full = " ".join(parts)
+
+    matches: list[list[Word]] = []
+    search_from = 0
+    while True:
+        first = full.find(needle, search_from)
+        if first == -1:
+            return matches
+        last = first + len(needle)
+        start_word: int | None = None
+        end_word: int | None = None
+        for i, (a, b) in enumerate(offsets):
+            if start_word is None and b > first:
+                start_word = i
+            if a < last:
+                end_word = i
+        if start_word is not None and end_word is not None:
+            matches.append(list(words[start_word : end_word + 1]))
+        search_from = first + 1
+
+
 def _build_located(mistake: Mistake, matched: list[Word]) -> LocatedMistake:
     """Build the LocatedMistake with the union bbox of ``matched``."""
     page_index = matched[0].page_index
