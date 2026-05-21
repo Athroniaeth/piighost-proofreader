@@ -32,16 +32,7 @@ class AnonymizationClient:
 
         Each item has: text, label, start_pos, end_pos, confidence.
         """
-        async with httpx.AsyncClient(timeout=self._timeout) as http:
-            try:
-                response = await http.post(
-                    f"{self._base_url}/v1/detect",
-                    json={"text": text, "thread_id": thread_id},
-                )
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                raise AnonymizeError(f"piighost-api /v1/detect failed: {exc}") from exc
-        body = response.json()
+        body = await self._post_json("/v1/detect", {"text": text, "thread_id": thread_id})
         return [
             {
                 "text": d["text"],
@@ -69,41 +60,44 @@ class AnonymizationClient:
             }
             for d in detections
         ]
-        async with httpx.AsyncClient(timeout=self._timeout) as http:
-            try:
-                response = await http.put(
-                    f"{self._base_url}/v1/detect",
-                    json={
-                        "text": text,
-                        "thread_id": thread_id,
-                        "detections": payload_detections,
-                    },
-                )
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                raise AnonymizeError(
-                    f"piighost-api PUT /v1/detect failed: {exc}"
-                ) from exc
+        await self._put_json(
+            "/v1/detect",
+            {"text": text, "thread_id": thread_id, "detections": payload_detections},
+        )
 
     async def get_labels(self) -> list[str]:
         """Return the configured label set from piighost-api."""
-        async with httpx.AsyncClient(timeout=self._timeout) as http:
-            try:
-                response = await http.get(f"{self._base_url}/v1/config")
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                raise AnonymizeError(f"piighost-api /v1/config failed: {exc}") from exc
-        return list(response.json().get("labels") or [])
+        body = await self._get_json("/v1/config")
+        return list(body.get("labels") or [])
 
-    async def _call(self, path: str, text: str, thread_id: str, *, response_key: str) -> str:
+    async def _post_json(self, path: str, payload: dict) -> dict:
+        """POST JSON, raise AnonymizeError on HTTP failure, return parsed body."""
         async with httpx.AsyncClient(timeout=self._timeout) as http:
             try:
-                response = await http.post(
-                    f"{self._base_url}{path}",
-                    json={"text": text, "thread_id": thread_id},
-                )
+                response = await http.post(f"{self._base_url}{path}", json=payload)
                 response.raise_for_status()
             except httpx.HTTPError as exc:
                 raise AnonymizeError(f"piighost-api {path} failed: {exc}") from exc
-        body = response.json()
+        return response.json()
+
+    async def _put_json(self, path: str, payload: dict) -> dict:
+        async with httpx.AsyncClient(timeout=self._timeout) as http:
+            try:
+                response = await http.put(f"{self._base_url}{path}", json=payload)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise AnonymizeError(f"piighost-api PUT {path} failed: {exc}") from exc
+        return response.json() if response.content else {}
+
+    async def _get_json(self, path: str) -> dict:
+        async with httpx.AsyncClient(timeout=self._timeout) as http:
+            try:
+                response = await http.get(f"{self._base_url}{path}")
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise AnonymizeError(f"piighost-api {path} failed: {exc}") from exc
+        return response.json()
+
+    async def _call(self, path: str, text: str, thread_id: str, *, response_key: str) -> str:
+        body = await self._post_json(path, {"text": text, "thread_id": thread_id})
         return body[response_key]
