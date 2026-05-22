@@ -36,7 +36,7 @@ export default function EmptyState({ onFile, onReject }: Props) {
       <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-xl text-center">
           <h1 className="text-3xl font-bold tracking-tight mb-2">ProofReader</h1>
-          <p className="text-sm text-text-100 mb-8">
+          <p className="text-sm text-text-100 mb-8 max-w-sm mx-auto">
             Glissez un PDF, le LLM repère orthographe, grammaire, accord,
             conjugaison et ponctuation.
           </p>
@@ -89,7 +89,7 @@ export default function EmptyState({ onFile, onReject }: Props) {
             </div>
           </div>
 
-          <p className="text-xs text-text-100 mt-6 leading-relaxed">
+          <p className="text-xs text-text-100 mt-6 leading-relaxed max-w-[460px] mx-auto">
             🔒 Aucune donnée personnelle ne sort de votre processus. Le contenu
             de votre CV est anonymisé via piighost-api avant d'être envoyé au
             modèle de langage.
