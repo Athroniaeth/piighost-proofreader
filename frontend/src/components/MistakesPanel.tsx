@@ -38,7 +38,7 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-1 pb-3 border-b border-base-100">
+      <div className="flex items-center gap-3 mb-3 pb-3 border-b border-base-100">
         <Checkbox
           checked={allChecked}
           onChange={() => dispatch({ type: "SET_ALL", enabled: !allChecked })}
@@ -48,6 +48,20 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
           {visible} / {mistakes.length} visibles
         </span>
       </div>
+
+      {/* Status bar: spinner+label while streaming, ✅ when done */}
+      {streaming ? (
+        <div className="flex items-center gap-2 mb-3 p-2.5 rounded-md bg-background-soft-50 text-sm text-text-50">
+          <span className="inline-block w-4 h-4 border-2 border-base-100 border-t-foreground-100 rounded-full animate-spin" />
+          <span>{PROGRESS_LABEL[progress]}</span>
+        </div>
+      ) : progress === "done" ? (
+        <div className="flex items-center gap-2 mb-3 p-2.5 rounded-md bg-badge-success-background text-sm text-badge-success-text">
+          <span>✅</span>
+          <span>Analyse terminée — {mistakes.length} faute{mistakes.length > 1 ? "s" : ""}</span>
+        </div>
+      ) : null}
+
       <p className="text-[11px] text-text-200 italic mb-3">
         Cliquez sur une faute pour la mettre en évidence sur le PDF.
       </p>
@@ -61,12 +75,6 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
           onActivate={() => dispatch({ type: "SET_ACTIVE", index: i })}
         />
       ))}
-      {streaming && (
-        <div className="flex items-center gap-2 mt-3 p-2 rounded-md bg-background-soft-50 text-xs text-text-100">
-          <span className="inline-block w-3 h-3 border-2 border-base-100 border-t-foreground-100 rounded-full animate-spin" />
-          {PROGRESS_LABEL[progress]}
-        </div>
-      )}
     </div>
   );
 }
