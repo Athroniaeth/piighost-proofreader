@@ -1,6 +1,8 @@
 import { useRef, useState, type DragEvent } from "react";
+import { UploadCloud } from "@tailgrids/icons";
 import { validateFile, type ValidationResult } from "@/lib/upload";
-import { Button } from "@/components/tailgrids/core/button";
+import { buttonStyles } from "@/components/tailgrids/core/button";
+import { cn } from "@/utils/cn";
 
 interface Props {
   onFile: (file: File) => void;
@@ -39,41 +41,51 @@ export default function EmptyState({ onFile, onReject }: Props) {
             conjugaison et ponctuation.
           </p>
 
-          <div
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            className={`p-12 border-2 border-dashed rounded-2xl transition-colors ${
-              isDragOver
-                ? "border-foreground-soft-100 bg-background-soft-200"
-                : "border-base-300 bg-background-soft-50 hover:border-base-300"
-            }`}
-          >
-            <div className="text-5xl mb-4">📄</div>
-            <div className="text-lg font-semibold mb-1">Glissez votre CV ici</div>
-            <div className="text-sm text-text-100 mb-5">ou</div>
-            <div className="flex justify-center">
-              <Button
-                variant="primary"
-                appearance="fill"
-                size="md"
-                onClick={() => inputRef.current?.click()}
+          {/* FileUpload card — drag area, cloud icon, Browse File styled div */}
+          <div className="bg-background-50 overflow-hidden rounded-2xl p-1 text-left">
+            <div className="space-y-5 p-8">
+              <label
+                htmlFor="file-upload"
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                className={cn(
+                  "border-base-200 flex cursor-pointer flex-col items-center rounded-lg border border-dashed p-12 transition duration-300",
+                  isDragOver
+                    ? "bg-background-soft-100 border-primary-500"
+                    : "hover:bg-background-soft-100"
+                )}
               >
-                Parcourir mes fichiers
-              </Button>
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                handle(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-            <div className="text-xs text-text-200 mt-5">
-              PDF uniquement · 10 Mo max · texte (pas un scan)
+                <div className="text-text-50 mb-4 flex justify-center">
+                  <UploadCloud className="size-6" />
+                </div>
+                <p className="text-title-50 mb-1 text-sm font-medium">
+                  Glissez le PDF du CV ou cliquez pour parcourir
+                </p>
+                <p className="text-text-100 mb-6 text-xs">
+                  PDF uniquement · 10 Mo max · texte (pas un scan)
+                </p>
+                <input
+                  id="file-upload"
+                  ref={inputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    handle(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <div
+                  className={buttonStyles({
+                    variant: "primary",
+                    appearance: "outline",
+                    size: "sm",
+                  })}
+                >
+                  Parcourir mes fichiers
+                </div>
+              </label>
             </div>
           </div>
 

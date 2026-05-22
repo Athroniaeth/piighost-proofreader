@@ -33,7 +33,7 @@ export default function ReviewState({
   }>({ text: "" });
 
   return (
-    <div className="min-h-screen flex flex-col max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
+    <div className="min-h-screen flex flex-col max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
       <ReviewTopBar
         filename={filename}
         count={finalDetections.length}
