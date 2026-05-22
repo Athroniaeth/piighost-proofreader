@@ -12,9 +12,9 @@ interface Props {
 }
 
 const PROGRESS_LABEL: Record<ProgressStep, string> = {
-  extracted: "Anonymisation…",
-  anonymized: "Génération des fautes…",
-  "llm-started": "Génération des fautes…",
+  extracted: "Chargement des détections…",
+  anonymized: "Chargement des détections…",
+  "llm-started": "Chargement des détections…",
   done: "",
 };
 
@@ -58,7 +58,7 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
       ) : progress === "done" ? (
         <div className="flex items-center gap-2 mb-3 p-2.5 rounded-md bg-badge-success-background text-sm text-badge-success-text">
           <span>✅</span>
-          <span>Analyse terminée — {mistakes.length} faute{mistakes.length > 1 ? "s" : ""}</span>
+          <span>Analyse terminée · {mistakes.length} faute{mistakes.length > 1 ? "s" : ""}</span>
         </div>
       ) : null}
 
