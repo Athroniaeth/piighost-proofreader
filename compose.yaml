@@ -1,12 +1,78 @@
 services:
-  proofreader:
-    build: .
-    image: piighost-proofreader:latest
-    ports:
-      - "8501:8501"
+  # ----- PII anonymisation API (sibling repo, public image) -----
+  piighost-api:
+    image: ghcr.io/athroniaeth/piighost-api:latest
     environment:
-      PIIGHOST_API_URL: ${PIIGHOST_API_URL}
+      - REDIS_URL=redis://redis:6379
+      - API_KEY_default=${PIIGHOST_API_KEY:-}
+    volumes:
+      - ./pipeline.py:/app/pipeline.py
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ----- Proofreading FastAPI (this repo) -----
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: piighost-proofreader-backend:latest
+    environment:
+      PIIGHOST_API_URL: http://piighost-api:8000
       LITELLM_MODEL: ${LITELLM_MODEL}
       LITELLM_API_KEY: ${LITELLM_API_KEY}
       LITELLM_API_BASE: ${LITELLM_API_BASE}
+    depends_on:
+      piighost-api:
+        condition: service_healthy
     restart: unless-stopped
+
+  # ----- React frontend (nginx serving dist + reverse-proxy /api) -----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: piighost-proofreader-frontend:latest
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ----- Legacy Streamlit UI (kept for debug, started via `--profile legacy`) -----
+  streamlit:
+    profiles: [legacy]
+    build: .
+    image: piighost-proofreader-streamlit:latest
+    ports:
+      - "8501:8501"
+    environment:
+      PIIGHOST_API_URL: http://piighost-api:8000
+      LITELLM_MODEL: ${LITELLM_MODEL}
+      LITELLM_API_KEY: ${LITELLM_API_KEY}
+      LITELLM_API_BASE: ${LITELLM_API_BASE}
+    depends_on:
+      piighost-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis-data:
