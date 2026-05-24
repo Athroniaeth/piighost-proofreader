@@ -130,7 +130,14 @@ export default function PdfPanel({
   return (
     // The viewer fills its parent container. The parent in ResultsState /
     // ReviewState already has min-h-[60vh], so we match that height here.
-    <div style={{ height: "100%", minHeight: "60vh" }}>
+    // I-beam cursor when the user is meant to select text (review mode).
+    <div
+      style={{
+        height: "100%",
+        minHeight: "60vh",
+        cursor: onTextSelection ? "text" : undefined,
+      }}
+    >
       <Worker workerUrl={workerUrl}>
         <Viewer
           fileUrl={blobUrl}

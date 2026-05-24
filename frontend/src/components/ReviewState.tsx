@@ -17,6 +17,13 @@ interface Props {
   dispatch: (action: AppAction) => void;
 }
 
+interface PickerState {
+  open: boolean;
+  initialText: string;
+  page?: number;
+  bbox?: [number, number, number, number];
+}
+
 export default function ReviewState({
   filename, pdfBytes, page_sizes, detections, pendingOverrides, dispatch,
 }: Props) {
@@ -25,18 +32,17 @@ export default function ReviewState({
     () => applyOverrides(detections, pendingOverrides),
     [detections, pendingOverrides]
   );
+  const autoCount = finalDetections.filter((d) => !d.manual).length;
+  const manualCount = finalDetections.filter((d) => d.manual).length;
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [picker, setPicker] = useState<{
-    text: string;
-    page?: number;
-    bbox?: [number, number, number, number];
-  }>({ text: "" });
+  const [picker, setPicker] = useState<PickerState>({ open: false, initialText: "" });
 
   return (
     <div className="min-h-screen flex flex-col max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
       <ReviewTopBar
         filename={filename}
-        count={finalDetections.length}
+        autoCount={autoCount}
+        manualCount={manualCount}
         onCancel={() => dispatch({ type: "RESET" })}
         onValidate={() => dispatch({ type: "REVIEW_SUBMIT" })}
       />
@@ -48,7 +54,7 @@ export default function ReviewState({
             variant="detection"
             enableTextLayer
             onTextSelection={(t, hint) =>
-              setPicker({ text: t, page: hint?.page, bbox: hint?.bbox })
+              setPicker({ open: true, initialText: t, page: hint?.page, bbox: hint?.bbox })
             }
             items={finalDetections.map((d) => ({ kind: "detection" as const, d }))}
             activeIndex={activeIndex}
@@ -66,24 +72,25 @@ export default function ReviewState({
             onRelabel={(d, newLabel) =>
               dispatch({ type: "OVERRIDE_RELABEL", detection: d, newLabel })
             }
+            onAddManual={() => setPicker({ open: true, initialText: "" })}
           />
         </div>
       </div>
       <LabelPickerModal
-        open={picker.text.length > 0}
-        text={picker.text}
+        open={picker.open}
+        initialText={picker.initialText}
         labels={labelsState.labels}
-        onPick={(label) => {
+        onPick={(text, label) => {
           dispatch({
             type: "OVERRIDE_ADD",
-            text: picker.text,
+            text,
             label,
             page: picker.page,
             bbox: picker.bbox,
           });
-          setPicker({ text: "" });
+          setPicker({ open: false, initialText: "" });
         }}
-        onClose={() => setPicker({ text: "" })}
+        onClose={() => setPicker({ open: false, initialText: "" })}
       />
     </div>
   );

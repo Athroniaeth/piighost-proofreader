@@ -3,24 +3,29 @@ import { Button } from "@/components/tailgrids/core/button";
 
 interface Props {
   open: boolean;
-  text: string;
+  /** Initial value of the text input. Empty when opening from the
+   *  "+ Ajouter" button, pre-filled when opening from a PDF selection. */
+  initialText: string;
   labels: string[];
-  onPick: (label: string) => void;
+  onPick: (text: string, label: string) => void;
   onClose: () => void;
 }
 
 export default function LabelPickerModal({
-  open, text, labels, onPick, onClose,
+  open, initialText, labels, onPick, onClose,
 }: Props) {
+  const [text, setText] = useState<string>("");
   const [selected, setSelected] = useState<string>("");
 
   useEffect(() => {
-    // Pre-select the first label so the "Ajouter" button is enabled by
-    // default — the user can still pick another one before confirming.
-    if (open) setSelected(labels[0] ?? "");
-  }, [open, labels]);
+    if (!open) return;
+    setText(initialText);
+    setSelected(labels[0] ?? "");
+  }, [open, initialText, labels]);
 
   if (!open) return null;
+
+  const canSubmit = text.trim().length >= 2 && selected.length > 0;
 
   return (
     <div
@@ -31,10 +36,21 @@ export default function LabelPickerModal({
         className="bg-background-50 rounded-xl p-6 w-full max-w-md mx-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-sm font-semibold mb-2">Anonymiser comme&nbsp;:</h3>
-        <p className="bg-background-soft-50 rounded p-2 text-sm mb-4 break-words">
-          {text}
+        <h3 className="text-sm font-semibold mb-2">
+          Texte à anonymiser&nbsp;:
+        </h3>
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="ex. Pierre Dupont"
+          className="w-full bg-background-soft-50 border border-base-100 rounded p-2 text-sm mb-1 focus:outline-none focus:border-primary-500"
+          autoFocus
+        />
+        <p className="text-[11px] text-text-200 italic mb-4">
+          Toutes les occurrences exactes seront anonymisées.
         </p>
+        <h3 className="text-sm font-semibold mb-2">Comme&nbsp;:</h3>
         <div className="max-h-48 overflow-y-auto mb-4 space-y-1">
           {labels.map((label) => (
             <label
@@ -60,8 +76,8 @@ export default function LabelPickerModal({
             variant="primary"
             appearance="fill"
             size="sm"
-            onClick={() => selected && onPick(selected)}
-            disabled={!selected}
+            onClick={() => canSubmit && onPick(text.trim(), selected)}
+            disabled={!canSubmit}
           >
             Ajouter
           </Button>
