@@ -74,7 +74,6 @@ export default function ReviewState({
             onRelabel={(d, newLabel) =>
               dispatch({ type: "OVERRIDE_RELABEL", detection: d, newLabel })
             }
-            onAddManual={() => setPicker({ open: true, initialText: "" })}
           />
         </div>
       </div>

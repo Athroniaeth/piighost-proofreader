@@ -1,6 +1,5 @@
 import type { PageDetection } from "@/lib/types";
 import DetectionCard from "./DetectionCard";
-import { Button } from "@/components/tailgrids/core/button";
 
 interface Props {
   detections: PageDetection[];
@@ -9,31 +8,21 @@ interface Props {
   onActivate: (i: number) => void;
   onRemove: (d: PageDetection) => void;
   onRelabel: (d: PageDetection, newLabel: string) => void;
-  onAddManual: () => void;
 }
 
 export default function DetectionsPanel({
-  detections, labels, activeIndex, onActivate, onRemove, onRelabel, onAddManual,
+  detections, labels, activeIndex, onActivate, onRemove, onRelabel,
 }: Props) {
   const empty = detections.length === 0;
   return (
     <div>
       <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100">
-        <p className="text-xs text-foreground-100 leading-relaxed mb-3">
+        <p className="text-xs text-foreground-100 leading-relaxed">
           Vos données personnelles ont été détectées et seront anonymisées
           avant l'envoi au modèle d'analyse. Si une donnée à protéger a été
-          oubliée, sélectionnez-la directement sur le PDF ou ajoutez-la
-          manuellement avec le bouton ci-dessous.
+          oubliée, <span className="font-semibold">sélectionnez-la directement
+          sur le PDF</span> pour l'ajouter à la liste.
         </p>
-        <Button
-          variant="primary"
-          appearance="fill"
-          size="sm"
-          onClick={onAddManual}
-          className="w-full"
-        >
-          + Ajouter une anonymisation
-        </Button>
       </div>
       <p className="text-[11px] text-text-100 mb-3 leading-relaxed">
         En cas d'erreur, cliquez la croix de la carte concernée pour la
@@ -44,8 +33,8 @@ export default function DetectionsPanel({
           <div className="text-3xl mb-2">🛡️</div>
           <div className="text-sm font-semibold mb-1">Aucune entité détectée</div>
           <div className="text-xs text-text-100 leading-relaxed">
-            piighost-api n'a rien repéré. Vous pouvez ajouter manuellement
-            ci-dessus.
+            piighost-api n'a rien repéré. Sélectionnez du texte sur le PDF
+            pour anonymiser manuellement.
           </div>
         </div>
       ) : (
