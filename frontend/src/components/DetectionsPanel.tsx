@@ -19,10 +19,11 @@ export default function DetectionsPanel({
   return (
     <div>
       <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100">
-        <p className="text-xs text-foreground-100 leading-relaxed mb-2">
-          <span className="font-semibold">Sélectionnez du texte sur le PDF</span>{" "}
-          pour l'ajouter à la liste d'anonymisation, ou cliquez le bouton
-          ci-dessous.
+        <p className="text-xs text-foreground-100 leading-relaxed mb-3">
+          Vos données personnelles ont été détectées et seront anonymisées
+          avant l'envoi au modèle d'analyse. Si une donnée à protéger a été
+          oubliée, sélectionnez-la directement sur le PDF ou ajoutez-la
+          manuellement avec le bouton ci-dessous.
         </p>
         <Button
           variant="primary"
@@ -35,7 +36,8 @@ export default function DetectionsPanel({
         </Button>
       </div>
       <p className="text-[11px] text-text-100 mb-3 leading-relaxed">
-        Croix pour retirer une entité · label pour re-catégoriser.
+        En cas d'erreur, cliquez la croix de la carte concernée pour la
+        retirer, ou son label pour changer de catégorie.
       </p>
       {empty ? (
         <div className="text-center px-6 py-8 border border-dashed border-base-200 rounded-lg">
