@@ -13,10 +13,7 @@ export default function ReviewTopBar({
   filename, autoCount, manualCount, onCancel, onValidate,
 }: Props) {
   const total = autoCount + manualCount;
-  const badgeLabel =
-    manualCount > 0
-      ? `${total} entités · ${autoCount} auto, ${manualCount} manuel`
-      : `${total} entités à anonymiser`;
+  const badgeLabel = `${total} ${total > 1 ? "entités" : "entité"} à anonymiser`;
   return (
     <div className="flex items-center justify-between bg-background-50 border border-base-100 rounded-xl px-5 py-3 mb-5">
       <div className="flex items-center gap-3">
