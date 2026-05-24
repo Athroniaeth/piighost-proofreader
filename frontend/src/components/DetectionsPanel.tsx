@@ -17,6 +17,9 @@ export default function DetectionsPanel({
   return (
     <div>
       <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100 space-y-2">
+        <h3 className="text-sm font-semibold text-foreground-100">
+          Anonymisation des données
+        </h3>
         <p className="text-xs text-foreground-100 leading-relaxed">
           Vos données personnelles ont été détectées et seront anonymisées
           avant l'envoi au modèle d'analyse. Si une donnée à protéger a été
