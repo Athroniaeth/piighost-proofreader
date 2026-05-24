@@ -19,11 +19,18 @@ services:
     restart: unless-stopped
 
   # ----- React frontend (nginx serving dist + reverse-proxy /api) -----
+  # The SERVICE_FQDN_FRONTEND env var is read by Coolify at deploy time:
+  # it provisions a public FQDN routing to this container's exposed port.
+  # Locally it's ignored, and the "5173:80" host mapping is used instead.
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: piighost-proofreader-frontend:latest
+    environment:
+      - SERVICE_FQDN_FRONTEND=/
+    expose:
+      - "80"
     ports:
       - "5173:80"
     depends_on:
