@@ -16,18 +16,18 @@ export default function DetectionsPanel({
   const empty = detections.length === 0;
   return (
     <div>
-      <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100">
+      <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100 space-y-2">
         <p className="text-xs text-foreground-100 leading-relaxed">
           Vos données personnelles ont été détectées et seront anonymisées
           avant l'envoi au modèle d'analyse. Si une donnée à protéger a été
           oubliée, <span className="font-semibold">sélectionnez-la directement
           sur le PDF</span> pour l'ajouter à la liste.
         </p>
+        <p className="text-xs text-foreground-100 leading-relaxed">
+          En cas d'erreur, cliquez la croix de la carte concernée pour la
+          retirer, ou son label pour changer de catégorie.
+        </p>
       </div>
-      <p className="text-[11px] text-text-100 mb-3 leading-relaxed">
-        En cas d'erreur, cliquez la croix de la carte concernée pour la
-        retirer, ou son label pour changer de catégorie.
-      </p>
       {empty ? (
         <div className="text-center px-6 py-8 border border-dashed border-base-200 rounded-lg">
           <div className="text-3xl mb-2">🛡️</div>
