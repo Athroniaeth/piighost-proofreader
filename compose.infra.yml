@@ -1,0 +1,45 @@
+# External infrastructure services consumed by the proofreader stack.
+#
+# Used in two ways:
+#   - included by compose.yaml so `docker compose up` brings up everything
+#   - standalone via `docker compose -f compose.infra.yml up` to run only
+#     the infra during dev (when backend + frontend run on the host)
+
+services:
+  # PII anonymisation API (sibling repo, public image).
+  piighost-api:
+    image: ghcr.io/athroniaeth/piighost-api:latest
+    # Port exposed so a host-side dev backend (`uv run uvicorn ...`) can
+    # reach it at http://localhost:8000. Inside the compose network the
+    # other services use the service name `piighost-api:8000`.
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - API_KEY_default=${PIIGHOST_API_KEY:-}
+    volumes:
+      - ./pipeline.py:/app/pipeline.py
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  redis-data:
