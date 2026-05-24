@@ -6,6 +6,7 @@ import TopBar from "./TopBar";
 import PdfPanel from "./PdfPanel";
 import MistakesPanel from "./MistakesPanel";
 import DebugPanel from "./DebugPanel";
+import StepIndicator from "./StepIndicator";
 
 interface Props {
   data: ProofreadResult;
@@ -25,6 +26,7 @@ export default function ResultsState({ data, pdfBytes, streaming, progress, onRe
 
   return (
     <div className="min-h-screen flex flex-col max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
+      <StepIndicator current={streaming ? 2 : 3} />
       <TopBar
         filename={data.filename}
         mistakeCount={data.mistakes.length}

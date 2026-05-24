@@ -103,7 +103,7 @@ export default function App() {
         />
       );
     case "loading-detect":
-      return <LoadingState />;
+      return <LoadingState currentStep={1} message="Extraction du texte · Détection des PII" />;
     case "reviewing":
       return (
         <ReviewState
@@ -116,7 +116,7 @@ export default function App() {
         />
       );
     case "loading-proofread":
-      return <LoadingState />;
+      return <LoadingState currentStep={2} message="Anonymisation · Lancement de l'analyse" />;
     case "error":
       return (
         <ErrorState

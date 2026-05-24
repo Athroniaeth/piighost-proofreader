@@ -7,6 +7,7 @@ import PdfPanel from "./PdfPanel";
 import DetectionsPanel from "./DetectionsPanel";
 import LabelPickerModal from "./LabelPickerModal";
 import ReviewTopBar from "./ReviewTopBar";
+import StepIndicator from "./StepIndicator";
 
 interface Props {
   filename: string;
@@ -39,6 +40,7 @@ export default function ReviewState({
 
   return (
     <div className="min-h-screen flex flex-col max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
+      <StepIndicator current={1} />
       <ReviewTopBar
         filename={filename}
         autoCount={autoCount}
