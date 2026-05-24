@@ -16,7 +16,7 @@ export default function DetectionsPanel({
   const empty = detections.length === 0;
   return (
     <div>
-      <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100 space-y-2">
+      <div className="mb-3 p-3 rounded-lg bg-badge-cyan-background border border-base-100 space-y-2">
         <h3 className="text-sm font-semibold text-foreground-100">
           Anonymisation des données
         </h3>
