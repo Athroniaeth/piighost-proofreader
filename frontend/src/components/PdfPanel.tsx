@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
@@ -38,6 +38,7 @@ export default function PdfPanel({
   // This avoids a StrictMode race where useMemo's URL gets revoked while
   // @react-pdf-viewer is still fetching it, surfacing as ERR_FILE_NOT_FOUND.
   const [blobUrl, setBlobUrl] = useState<string>("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const url = URL.createObjectURL(
@@ -55,6 +56,18 @@ export default function PdfPanel({
     const handler = () => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed) return;
+      // Scope: only fire when the selection lives inside this viewer's
+      // wrapper. Selections in the sidebar, header, debug panel, etc.
+      // shouldn't pop the label-picker.
+      const wrapper = wrapperRef.current;
+      let inside = false;
+      try {
+        const node = sel.getRangeAt(0).startContainer;
+        inside = !!(wrapper && wrapper.contains(node));
+      } catch {
+        return;
+      }
+      if (!inside) return;
       const text = sel.toString().replace(/\s+/g, " ").trim();
       if (text.length < 2) return;
 
@@ -132,6 +145,7 @@ export default function PdfPanel({
     // ReviewState already has min-h-[60vh], so we match that height here.
     // I-beam cursor when the user is meant to select text (review mode).
     <div
+      ref={wrapperRef}
       style={{
         height: "100%",
         minHeight: "60vh",

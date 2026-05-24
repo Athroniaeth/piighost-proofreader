@@ -18,18 +18,24 @@ export default function DetectionsPanel({
   const empty = detections.length === 0;
   return (
     <div>
-      <Button
-        variant="primary"
-        appearance="outline"
-        size="sm"
-        onClick={onAddManual}
-        className="w-full mb-3"
-      >
-        + Ajouter une anonymisation
-      </Button>
-      <p className="text-[11px] text-text-200 italic mb-3 leading-relaxed">
-        Sélectionnez du texte sur le PDF pour l'anonymiser, ou utilisez le
-        bouton ci-dessus. Croix pour retirer, label pour re-catégoriser.
+      <div className="mb-3 p-3 rounded-lg bg-badge-primary-background border border-base-100">
+        <p className="text-xs text-foreground-100 leading-relaxed mb-2">
+          <span className="font-semibold">Sélectionnez du texte sur le PDF</span>{" "}
+          pour l'ajouter à la liste d'anonymisation, ou cliquez le bouton
+          ci-dessous.
+        </p>
+        <Button
+          variant="primary"
+          appearance="fill"
+          size="sm"
+          onClick={onAddManual}
+          className="w-full"
+        >
+          + Ajouter une anonymisation
+        </Button>
+      </div>
+      <p className="text-[11px] text-text-100 mb-3 leading-relaxed">
+        Croix pour retirer une entité · label pour re-catégoriser.
       </p>
       {empty ? (
         <div className="text-center px-6 py-8 border border-dashed border-base-200 rounded-lg">
