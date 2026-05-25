@@ -17,6 +17,9 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      # See comment in compose.yaml — needed so the venv entrypoint can
+      # import the mounted /app/pipeline.py.
+      - PYTHONPATH=/app
       - REDIS_URL=redis://redis:6379
       - API_KEY_default=${PIIGHOST_API_KEY:-}
     volumes:
