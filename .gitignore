@@ -1,12 +1,43 @@
+# Python
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .pytest_cache/
 .ruff_cache/
-site/
+.mypy_cache/
+.pyrefly_cache/
+.coverage
+coverage/
+htmlcov/
+*.egg-info/
+build/
 dist/
+
+# Environment & secrets
 .env
+.env.*
+!.env.example
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project artefacts
+site/
 *.tmp.pdf
 samples/*.pdf
 !samples/.gitkeep
+
+# Tooling / agents
 .superpowers/
+.claude/
