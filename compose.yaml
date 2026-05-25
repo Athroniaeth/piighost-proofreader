@@ -6,8 +6,11 @@ services:
   # Keep this block in sync with compose.infra.yml if you edit either.
   piighost-api:
     image: ghcr.io/athroniaeth/piighost-api:latest
-    ports:
-      - "127.0.0.1:8000:8000"
+    # No `ports:` here on purpose. In Coolify the other containers reach
+    # this service via the docker network (piighost-api:8000), and the
+    # host of the Coolify VM may already have something on port 8000.
+    # For local dev that needs a host binding, use compose.infra.yml
+    # which keeps `127.0.0.1:8000:8000`.
     environment:
       - REDIS_URL=redis://redis:6379
       - API_KEY_default=${PIIGHOST_API_KEY:-}
