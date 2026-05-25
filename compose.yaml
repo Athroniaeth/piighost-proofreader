@@ -12,15 +12,16 @@ services:
     # For local dev that needs a host binding, use compose.infra.yml
     # which keeps `127.0.0.1:8000:8000`.
     environment:
-      # PYTHONPATH so the venv entrypoint can find /app/pipeline.py at
-      # boot. Without it, importlib.import_module("pipeline") fails with
-      # ModuleNotFoundError because /app isn't on sys.path by default.
-      - PYTHONPATH=/app
       - REDIS_URL=redis://redis:6379
       - SECRET_PEPPER=${SECRET_PEPPER:-}
       - API_KEY_default=${PIIGHOST_API_KEY:-}
     volumes:
-      - ./pipeline.py:/app/pipeline.py
+      # Mount inside /app/src/ (not /app/) because the piighost-api
+      # package is installed editable from /app/src, so /app/src is the
+      # only project directory on the venv's sys.path. Mounting at /app
+      # caused `ModuleNotFoundError: No module named 'pipeline'` when the
+      # console-script entrypoint launched (no CWD on sys.path).
+      - ./pipeline.py:/app/src/pipeline.py
     depends_on:
       redis:
         condition: service_healthy
