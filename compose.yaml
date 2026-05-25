@@ -52,7 +52,7 @@ services:
       LITELLM_API_BASE: ${LITELLM_API_BASE}
     depends_on:
       piighost-api:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # ----- React frontend (nginx serving dist + reverse-proxy /api) -----
@@ -88,7 +88,7 @@ services:
       LITELLM_API_BASE: ${LITELLM_API_BASE}
     depends_on:
       piighost-api:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
 volumes:
