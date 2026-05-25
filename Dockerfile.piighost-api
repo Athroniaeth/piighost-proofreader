@@ -1,0 +1,11 @@
+# Thin layer over the public piighost-api image that bakes our pipeline.py
+# into the image at /app/src/. We do this instead of a bind-mount because
+# Coolify's compose runner doesn't reliably resolve `./pipeline.py` to the
+# cloned repo directory on every redeploy.
+#
+# /app/src is the path the venv has on sys.path (piighost_api is installed
+# editable from there), so a plain `import pipeline` resolves without any
+# PYTHONPATH gymnastics.
+FROM ghcr.io/athroniaeth/piighost-api:latest
+
+COPY pipeline.py /app/src/pipeline.py

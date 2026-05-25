@@ -5,7 +5,13 @@ services:
   # so the project parses as "service depends on undefined service".
   # Keep this block in sync with compose.infra.yml if you edit either.
   piighost-api:
-    image: ghcr.io/athroniaeth/piighost-api:latest
+    # Built locally so pipeline.py is baked into the image — see
+    # Dockerfile.piighost-api. Avoids depending on a bind-mount that
+    # Coolify's compose runner doesn't always honor.
+    build:
+      context: .
+      dockerfile: Dockerfile.piighost-api
+    image: piighost-proofreader-piighost-api:latest
     # No `ports:` here on purpose. In Coolify the other containers reach
     # this service via the docker network (piighost-api:8000), and the
     # host of the Coolify VM may already have something on port 8000.
@@ -15,13 +21,6 @@ services:
       - REDIS_URL=redis://redis:6379
       - SECRET_PEPPER=${SECRET_PEPPER:-}
       - API_KEY_default=${PIIGHOST_API_KEY:-}
-    volumes:
-      # Mount inside /app/src/ (not /app/) because the piighost-api
-      # package is installed editable from /app/src, so /app/src is the
-      # only project directory on the venv's sys.path. Mounting at /app
-      # caused `ModuleNotFoundError: No module named 'pipeline'` when the
-      # console-script entrypoint launched (no CWD on sys.path).
-      - ./pipeline.py:/app/src/pipeline.py
     depends_on:
       redis:
         condition: service_healthy
