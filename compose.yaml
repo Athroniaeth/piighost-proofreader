@@ -13,6 +13,7 @@ services:
     # which keeps `127.0.0.1:8000:8000`.
     environment:
       - REDIS_URL=redis://redis:6379
+      - SECRET_PEPPER=${SECRET_PEPPER:-}
       - API_KEY_default=${PIIGHOST_API_KEY:-}
     volumes:
       - ./pipeline.py:/app/pipeline.py
@@ -24,7 +25,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-      start_period: 30s
+      start_period: 60s
     restart: unless-stopped
 
   redis:
