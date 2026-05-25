@@ -5,7 +5,7 @@ services:
   # so the project parses as "service depends on undefined service".
   # Keep this block in sync with compose.infra.yml if you edit either.
   piighost-api:
-    # Built locally so pipeline.py is baked into the image — see
+    # Built locally so pipeline.toml is baked into the image. See
     # Dockerfile.piighost-api. Avoids depending on a bind-mount that
     # Coolify's compose runner doesn't always honor.
     build:

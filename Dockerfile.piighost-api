@@ -1,11 +1,10 @@
-# Thin layer over the public piighost-api image that bakes our pipeline.py
-# into the image at /app/src/. We do this instead of a bind-mount because
-# Coolify's compose runner doesn't reliably resolve `./pipeline.py` to the
-# cloned repo directory on every redeploy.
+# Thin layer over the public piighost-api image that bakes our pipeline.toml
+# into the image at /app/pipeline.toml. We do this instead of a bind-mount
+# because Coolify's compose runner doesn't reliably resolve `./pipeline.toml`
+# to the cloned repo directory on every redeploy.
 #
-# /app/src is the path the venv has on sys.path (piighost_api is installed
-# editable from there), so a plain `import pipeline` resolves without any
-# PYTHONPATH gymnastics.
+# /app/pipeline.toml is the default PIIGHOST_CONFIG path baked into the
+# upstream image, so no env override is needed.
 FROM ghcr.io/athroniaeth/piighost-api:latest
 
-COPY pipeline.py /app/src/pipeline.py
+COPY pipeline.toml /app/pipeline.toml
