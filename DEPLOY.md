@@ -58,5 +58,5 @@ Push to the configured branch, or click "Deploy" in the Coolify dashboard. Build
 ## Troubleshooting
 
 - **Frontend can't reach backend**: confirm the nginx container can resolve `backend` (the docker network is intact). Most often a CORS issue is actually misrouted `/api/` due to a stale build — redeploy.
-- **piighost-api crash on boot**: `pipeline.py` import error. Make sure the file at the repo root matches the piighost API version. Tail the container logs in Coolify.
+- **piighost-api crash on boot**: `pipeline.toml` validation error. The file at the repo root must validate with `piighost validate pipeline.toml` against the piighost version baked into the API image. Tail the container logs in Coolify.
 - **LLM call fails**: check `LITELLM_API_BASE` is reachable from inside the Coolify network (Cloudflare/firewall blocking is common). Backend logs surface the error in the `error` SSE event.
