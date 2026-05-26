@@ -16,18 +16,17 @@ Pour relire votre CV avant un envoi important, vous pouvez le confier à un LLM.
 ```mermaid
 flowchart LR
   PDF[PDF du CV] --> Markdown
-  Markdown -->|anonymise + thread_id| Anon[Markdown anonymisé]
+  Markdown -->|anonymise| Anon[Markdown anonymisé]
   Anon --> LLM[GPT-5.5]
-  LLM --> Mistakes[Erreurs avec placeholders]
-  Mistakes -->|deanonymize_entities| Clear[Erreurs en clair]
-  Clear -->|locator + PyMuPDF bbox| PDF2[PDF + overlays rouges]
+  LLM --> Mistakes[Erreurs détectées]
+  Mistakes -->|locator + PyMuPDF bbox| PDF2[PDF + overlays rouges]
 ```
 
 ![Rendu final : le PDF du CV avec les rectangles rouges sur les erreurs détectées](https://placehold.co/1200x675?text=Replace+with+real+screenshot)
 
 Le LLM ne voit jamais un nom, une date, une adresse. À la sortie, les corrections atterrissent au bon mot sur le bon PDF.
 
-Entre les deux, il a fallu résoudre trois trucs vicieux. C'est l'objet de l'article.
+L'anonymisation, c'est la partie facile. La vraie difficulté, c'est de retrouver dans le PDF un mot que le LLM n'a vu qu'en Markdown — surtout quand le LLM et PyMuPDF ne tokenisent pas pareil. C'est l'objet du reste de l'article.
 
 ## 1. Pourquoi pas juste une regex ?
 
@@ -47,40 +46,11 @@ async def anonymize(self, text: str, *, thread_id: str) -> str:
     )
 ```
 
-Le `thread_id` (une UUID par upload) sert à garder côté serveur un mapping entre chaque entité réelle et son placeholder. C'est ce qui permettra de re-substituer plus tard, au retour du LLM. On voit pourquoi dans la section suivante.
+Le `thread_id` est une UUID générée par CV — elle scope le mapping entité↔placeholder côté serveur, pour qu'un même nom devienne le même placeholder dans toute la session.
 
-## 2. Le piège du « le LLM ne renvoie pas ce qu'on lui a donné »
+## 2. Le retour sur PDF : quatre stratégies de fallback
 
-Une fois le Markdown anonymisé envoyé au LLM, on s'attend à recevoir des corrections truffées de `<<PERSON:1>>`, `<<EMAIL:3>>`, et il *« suffit »* de re-substituer pour finir. C'est ce que j'ai fait au premier essai.
-
-Premier appel à `/v1/deanonymize` → **404 Not Found**.
-
-Pourquoi ? Parce que le LLM ne renvoie *pas* le texte anonymisé en intégralité. Le schéma de sortie structuré demande, pour chaque erreur, des champs comme `error_text`, `context_before`, `correction`, `description`. Le LLM y met des **sous-extraits** : 5 mots ici, une phrase paraphrasée là, parfois avec une virgule déplacée. Aucun de ces champs n'est verbatim l'anonymisé.
-
-Or `/v1/deanonymize` est cache-keyed sur le hash du texte anonymisé complet. Il sait dé-anonymiser ce qu'il a anonymisé, mais pas un sous-extrait qu'il n'a jamais vu. D'où le 404.
-
-`piighost` expose un deuxième endpoint pour exactement ce cas : `/v1/deanonymize/entities`. Au lieu de chercher la clé du texte complet, il fait un remplacement par entité présente dans le sous-extrait (les `<<LABEL:N>>` qu'il y trouve sont résolus contre le mapping du `thread_id`).
-
-```python
-# src/proofreader/anonymize.py
-async def deanonymize(self, text: str, *, thread_id: str) -> str:
-    # /v1/deanonymize/entities does token-based replacement on any text,
-    # while /v1/deanonymize is cache-keyed on the full anonymized text
-    # and 404s on substrings. We pass substrings (Mistake.error_text,
-    # context_before, correction, description), so we need the entity
-    # endpoint.
-    return await self._call(
-        "/v1/deanonymize/entities", text, thread_id, response_key="text"
-    )
-```
-
-Concrètement, pour chaque `Mistake` que le LLM renvoie, je rappelle `deanonymize` sur chacun de ses quatre champs textuels. C'est plus de round-trips, mais c'est ce qui rend le pipeline robuste aux paraphrasages.
-
-À retenir : quand vous faites passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des fragments du texte original, pas le texte entier. Si votre outil d'anonymisation ne fait pas la distinction, vous allez vous cogner contre ce mur.
-
-## 3. Le retour sur PDF : quatre stratégies de fallback
-
-À ce stade, j'ai pour chaque erreur un `error_text` en clair (post-deanon), un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
+Une fois le Markdown anonymisé envoyé au LLM, je récupère pour chaque erreur un `error_text`, un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
 
 Or l'utilisateur veut voir les corrections sur le PDF d'origine, pas un texte plat dans une page de résultats. Donc il faut, pour chaque erreur, retrouver le mot dans le PDF.
 
@@ -139,10 +109,9 @@ Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localis�
 Anonymiser pour un LLM, ce n'est pas une opération en un coup. C'est un cycle :
 
 1. **Détecter les entités, pas leur format.** Une regex ne suffit pas pour les noms, entreprises ou dates. Il faut un détecteur entraîné.
-2. **Pouvoir dé-anonymiser des fragments.** Le LLM ne renvoie pas le texte qu'on lui a donné ; il renvoie des morceaux paraphrasés. Si votre outil ne sait dé-anonymiser qu'un texte entier, vous allez le découvrir à la dure.
-3. **Reconnecter le résultat à la source.** Si vous travaillez sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Vous devez les retrouver après coup, et accepter que ce ne sera pas toujours possible.
+2. **Reconnecter le résultat à la source.** Si vous travaillez sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Vous devez les retrouver après coup, et accepter que ce ne sera pas toujours possible.
 
-`piighost` couvre les deux premiers points out of the box. Le troisième est spécifique à mon projet, mais le code est ouvert.
+`piighost` couvre le premier point out of the box. Le second est spécifique à mon projet, mais le code est ouvert.
 
 - **piighost** : [github.com/Athroniaeth/piighost](https://github.com/Athroniaeth/piighost), la lib d'anonymisation utilisée ici.
 - **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader), le projet complet, démo en ligne, locator inclus.
