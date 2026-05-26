@@ -14,7 +14,7 @@ Design spec for a single dev.to article showcasing `piighost-proofreader` as a r
 | Platform | dev.to (Forem). Markdown only, no JS, native code blocks. |
 | Language | French first, then adapt to English in a second pass. |
 | Reader profile | Hybrid: a generalist Python/LLM dev should grasp the TL;DR; an LLM/RAG expert should learn from the deep dives. |
-| Target length | 2500–3000 words FR. EN version expected to be ~10% shorter (denser). |
+| Target length | ~2000–2500 words FR (dev.to read-through sweet spot ; aim for density, not padding). EN version expected ~10% shorter. |
 | Tone | Technical, narrative, *story* of solving real problems. No marketing fluff. No buzzwords. |
 | Code | Concrete Python snippets, no pseudocode. Snippets must compile / be runnable as-is in `piighost-proofreader`. |
 | Visuals | 1 Mermaid pipeline diagram, 1–2 screenshots of the rendered PDF, no UI screenshots of the React frontend. |
