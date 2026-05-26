@@ -23,7 +23,7 @@ flowchart LR
   Clear -->|locator + PyMuPDF bbox| PDF2[PDF + overlays rouges]
 ```
 
-> 📸 *(screenshot du rendu final ici — voir Task 8)*
+![Rendu final : le PDF du CV avec les rectangles rouges sur les erreurs détectées](https://placehold.co/1200x675?text=Replace+with+real+screenshot)
 
 Le LLM ne voit jamais un seul nom, une seule date de naissance, un seul employeur. À la sortie, les corrections atterrissent au bon mot sur le bon PDF.
 
@@ -148,3 +148,14 @@ Anonymiser pour un LLM, ce n'est pas une opération en un coup — c'est un cycl
 - **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader) — le projet complet, démo en ligne, locator inclus.
 
 Issues et PR bienvenues. Si tu as un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement te concerner — n'hésite pas à ouvrir une discussion.
+
+<!--
+SCREENSHOT TODO (avant publication):
+1. uv run python samples/build_samples.py
+2. uv run streamlit run app.py
+3. upload samples/cv_fr.pdf in the UI
+4. wait for the run to finish, take a screenshot of the rendered first page with overlays
+5. upload the screenshot to dev.to (drag-and-drop in the editor — Forem hosts it)
+6. replace the placehold.co URL above with the dev.to-hosted URL
+7. (optional) take a second screenshot of the "Non localisées" section for the end of section 3 — same upload flow
+-->
