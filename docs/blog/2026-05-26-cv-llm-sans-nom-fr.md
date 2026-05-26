@@ -24,13 +24,13 @@ flowchart LR
 
 ![Rendu final : le PDF du CV avec les rectangles rouges sur les erreurs détectées](https://placehold.co/1200x675?text=Replace+with+real+screenshot)
 
-Le LLM ne voit jamais un nom, une date, une adresse. À la sortie, les corrections atterrissent au bon mot sur le bon PDF.
+Le LLM ne voit jamais un nom, une date, une adresse.
 
 L'anonymisation, c'est la partie facile. Le morceau pénible, c'est de retrouver dans le PDF un mot que le LLM n'a vu qu'en Markdown. Et le LLM et PyMuPDF ne tokenisent pas pareil.
 
 ## 1. Pourquoi pas juste une regex ?
 
-Première idée évidente : avant d'envoyer le CV au LLM, on remplace les données sensibles par une bonne grosse regex. Ça marche pour les emails et les numéros de téléphone, qui ont des formats reconnaissables. Pour le reste, c'est mort.
+Première idée : avant d'envoyer le CV au LLM, on remplace les données sensibles par une bonne grosse regex. Ça marche pour les emails et les numéros de téléphone, qui ont un format reconnaissable. Pour le reste, c'est mort.
 
 - Un nom n'a aucune forme syntaxique distinctive. `Paul Martin` ressemble à n'importe quels deux mots capitalisés ; rien dans le texte ne dit à une regex que c'est un nom.
 - `Orange` est une entreprise. C'est aussi un fruit. `Mars`, `Apple`, `Carrefour`, pareil.
@@ -46,7 +46,7 @@ async def anonymize(self, text: str, *, thread_id: str) -> str:
     )
 ```
 
-Le `thread_id` est une UUID par CV. Elle garantit qu'un même nom devienne le même placeholder dans toute la session, en isolant le mapping côté serveur.
+Le `thread_id` est une UUID par CV. Le mapping entité→placeholder reste côté serveur, scopé par cet ID : un même nom devient le même placeholder à chaque occurrence.
 
 ## 2. Le retour sur PDF : quatre stratégies de fallback
 
@@ -98,7 +98,7 @@ Pourquoi cet ordre exact :
 
 2. **Tolérant.** Le LLM capitalise le premier mot d'une phrase, ou remplace `'` par `'` (apostrophe typographique). `_normalize` casefold le tout, remappe les guillemets et apostrophes typographiques vers leur version ASCII, et strippe la ponctuation que PyMuPDF colle aux tokens.
 
-3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte. C'est statistiquement sûr.
+3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte. Ça suffit dans la quasi-totalité des cas.
 
 4. **Substring du stream concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule string et chercher en sous-chaîne. On gate par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` matche dans `commune`, `lacune`, `tribune`. Bonjour les faux positifs.
 
