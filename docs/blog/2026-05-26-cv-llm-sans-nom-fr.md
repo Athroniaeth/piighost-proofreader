@@ -49,7 +49,34 @@ async def anonymize(self, text: str, *, thread_id: str) -> str:
 
 Le `thread_id` est la clé qui rend l'anonymisation déterministe pour une session : la même valeur passée à l'`anonymize` initial puis aux appels de `deanonymize` partage le mapping côté serveur. C'est ce qui permet à un LLM de raisonner correctement sur des entités masquées sans savoir qui elles sont.
 
-<!-- Section 2 — Le piège deanonymize entities -->
+## 2. Le piège du « le LLM ne renvoie pas ce qu'on lui a donné »
+
+Une fois le Markdown anonymisé envoyé au LLM, on s'attend à recevoir des corrections truffées de `<<PERSON:1>>`, `<<EMAIL:3>>`, et il *« suffit »* de re-substituer pour finir. C'est ce que j'ai fait au premier essai.
+
+Premier appel à `/v1/deanonymize` → **404 Not Found**.
+
+Pourquoi ? Parce que le LLM ne renvoie *pas* le texte anonymisé en intégralité. Le schéma de sortie structuré demande, pour chaque erreur, des champs comme `error_text`, `context_before`, `correction`, `description`. Le LLM y met des **sous-extraits** : 5 mots ici, une phrase paraphrasée là, parfois avec une virgule déplacée. Aucun de ces champs n'est verbatim l'anonymisé.
+
+Or `/v1/deanonymize` est cache-keyed sur le hash du texte anonymisé complet — il sait dé-anonymiser ce qu'il a anonymisé, mais pas un sous-extrait qu'il n'a jamais vu. D'où le 404.
+
+`piighost` expose un deuxième endpoint pour exactement ce cas : `/v1/deanonymize/entities`. Au lieu de chercher la clé du texte complet, il fait un remplacement par entité présente dans le sous-extrait (les `<<LABEL:N>>` qu'il y trouve sont résolus contre le mapping du `thread_id`).
+
+```python
+# src/proofreader/anonymize.py
+async def deanonymize(self, text: str, *, thread_id: str) -> str:
+    # /v1/deanonymize/entities does token-based replacement on any text,
+    # while /v1/deanonymize is cache-keyed on the full anonymized text
+    # and 404s on substrings. We pass substrings (Mistake.error_text,
+    # context_before, correction, description), so we need the entity
+    # endpoint.
+    return await self._call(
+        "/v1/deanonymize/entities", text, thread_id, response_key="text"
+    )
+```
+
+Concrètement, pour chaque `Mistake` que le LLM renvoie, je rappelle `deanonymize` sur chacun de ses quatre champs textuels. C'est plus de round-trips, mais c'est ce qui rend le pipeline robuste aux paraphrasages.
+
+**À retenir** : quand tu fais passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des **fragments** du texte original, pas le texte entier. Si ton outil d'anonymisation ne fait pas la distinction, tu vas hit ce mur.
 
 <!-- Section 3 — Le locator -->
 
