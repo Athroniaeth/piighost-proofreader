@@ -9,9 +9,9 @@ cover_image:
 
 ## TL;DR
 
-Un proofreader de CV doit comprendre du texte (donc parler à un LLM) **et** ne jamais exposer les données perso de la personne. C'est la tension que ce projet — `piighost-proofreader` — résout.
+Un *proofreader*, c'est un relecteur automatique : tu lui donnes un texte, il te ressort les fautes. Pour bien le faire aujourd'hui, on s'appuie sur un LLM. Sauf qu'un CV est plein de données perso (nom, prénom, dates, adresses, entreprises) et qu'envoyer le tout brut à GPT-5.5, c'est confier ces données à un tiers.
 
-Le pipeline fait quatre choses dans l'ordre :
+`piighost-proofreader` répond à cette tension. Le CV passe par une anonymisation locale avant le LLM, puis les corrections sont reposées au bon mot sur le PDF d'origine :
 
 ```mermaid
 flowchart LR
@@ -25,19 +25,19 @@ flowchart LR
 
 ![Rendu final : le PDF du CV avec les rectangles rouges sur les erreurs détectées](https://placehold.co/1200x675?text=Replace+with+real+screenshot)
 
-Le LLM ne voit jamais un seul nom, une seule date de naissance, un seul employeur. À la sortie, les corrections atterrissent au bon mot sur le bon PDF.
+Le LLM ne voit jamais un nom, une date, une adresse. À la sortie, les corrections atterrissent au bon mot sur le bon PDF.
 
-Et entre les deux, j'ai dû résoudre trois trucs vicieux. C'est l'objet de cet article.
+Entre les deux, il a fallu résoudre trois trucs vicieux. C'est l'objet de l'article.
 
-## 1. La promesse naïve qui tombe vite à plat
+## 1. Pourquoi pas juste une regex ?
 
-Le réflexe, c'est de dire *« anonymiser un CV, c'est un regex sur les emails et les numéros de téléphone »*. C'est faux pour trois raisons concrètes :
+Première idée évidente : avant d'envoyer le CV au LLM, on remplace les données sensibles par une bonne grosse regex. Ça marche pour les emails et les numéros de téléphone, qui ont des formats reconnaissables. Pour le reste, c'est mort.
 
-- **Les prénoms sont ambigus.** « Paul » est un prénom, mais c'est aussi un fragment de « Saint-Paul-lès-Romans ». Une regex ne fait pas la différence ; un détecteur entraîné, si.
-- **Les employeurs n'ont pas de format unique.** « Orange », « SNCF », « Cabinet Lefèvre & Associés » ne se laissent pas attraper par un pattern.
-- **Surtout : il faut de la cohérence.** Si « Patrick » apparaît quatre fois dans le CV, il doit devenir le *même* placeholder à chaque fois. Sinon le LLM voit `<<PERSON:1>>` à un endroit et `<<PERSON:7>>` à l'autre et se persuade qu'il y a deux personnes différentes — l'inférence se casse silencieusement.
+- Un nom n'a aucune forme syntaxique distinctive. `Paul Martin` ressemble à n'importe quels deux mots capitalisés ; rien dans le texte ne dit à une regex que c'est un nom.
+- `Orange` est une entreprise. C'est aussi un fruit. `Mars`, `Apple`, `Carrefour`, pareil.
+- Une date dans un CV peut être une naissance, un diplôme, un changement de poste. Le format est le même.
 
-Cette dernière contrainte, c'est ce qui m'a fait sortir du regex. `piighost` la résout en mappant chaque entité détectée à un placeholder stable dans un cache Redis, scopé par `thread_id` (une UUID par upload de CV) :
+Il faut un détecteur entraîné, pas un pattern. `piighost` en fournit un, accessible via une API simple :
 
 ```python
 # src/proofreader/anonymize.py
@@ -47,7 +47,7 @@ async def anonymize(self, text: str, *, thread_id: str) -> str:
     )
 ```
 
-Le `thread_id` est la clé qui rend l'anonymisation déterministe pour une session : la même valeur passée à l'`anonymize` initial puis aux appels de `deanonymize` partage le mapping côté serveur. C'est ce qui permet à un LLM de raisonner correctement sur des entités masquées sans savoir qui elles sont.
+Le `thread_id` (une UUID par upload) sert à garder côté serveur un mapping entre chaque entité réelle et son placeholder. C'est ce qui permettra de re-substituer plus tard, au retour du LLM. On voit pourquoi dans la section suivante.
 
 ## 2. Le piège du « le LLM ne renvoie pas ce qu'on lui a donné »
 
@@ -57,7 +57,7 @@ Premier appel à `/v1/deanonymize` → **404 Not Found**.
 
 Pourquoi ? Parce que le LLM ne renvoie *pas* le texte anonymisé en intégralité. Le schéma de sortie structuré demande, pour chaque erreur, des champs comme `error_text`, `context_before`, `correction`, `description`. Le LLM y met des **sous-extraits** : 5 mots ici, une phrase paraphrasée là, parfois avec une virgule déplacée. Aucun de ces champs n'est verbatim l'anonymisé.
 
-Or `/v1/deanonymize` est cache-keyed sur le hash du texte anonymisé complet — il sait dé-anonymiser ce qu'il a anonymisé, mais pas un sous-extrait qu'il n'a jamais vu. D'où le 404.
+Or `/v1/deanonymize` est cache-keyed sur le hash du texte anonymisé complet. Il sait dé-anonymiser ce qu'il a anonymisé, mais pas un sous-extrait qu'il n'a jamais vu. D'où le 404.
 
 `piighost` expose un deuxième endpoint pour exactement ce cas : `/v1/deanonymize/entities`. Au lieu de chercher la clé du texte complet, il fait un remplacement par entité présente dans le sous-extrait (les `<<LABEL:N>>` qu'il y trouve sont résolus contre le mapping du `thread_id`).
 
@@ -76,13 +76,13 @@ async def deanonymize(self, text: str, *, thread_id: str) -> str:
 
 Concrètement, pour chaque `Mistake` que le LLM renvoie, je rappelle `deanonymize` sur chacun de ses quatre champs textuels. C'est plus de round-trips, mais c'est ce qui rend le pipeline robuste aux paraphrasages.
 
-**À retenir** : quand tu fais passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des **fragments** du texte original, pas le texte entier. Si ton outil d'anonymisation ne fait pas la distinction, tu vas hit ce mur.
+À retenir : quand tu fais passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des fragments du texte original, pas le texte entier. Si ton outil d'anonymisation ne fait pas la distinction, tu vas te cogner contre ce mur.
 
 ## 3. Le retour sur PDF : quatre stratégies de fallback
 
 À ce stade, j'ai pour chaque erreur un `error_text` en clair (post-deanon), un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
 
-Or l'utilisateur veut **voir** les corrections sur le PDF d'origine — pas un texte plat dans une page de résultats. Donc il faut, pour chaque erreur, retrouver le mot dans le PDF.
+Or l'utilisateur veut voir les corrections sur le PDF d'origine, pas un texte plat dans une page de résultats. Donc il faut, pour chaque erreur, retrouver le mot dans le PDF.
 
 Du côté du PDF, j'utilise PyMuPDF, qui me donne un *word stream* : la liste de tous les mots de la page avec leurs `bbox` (rectangles en points). Le problème devient : *« trouver la fenêtre `[mot1, mot2, …]` dans cette liste »*. Sauf que le LLM et PyMuPDF tokenisent légèrement différemment, qu'il y a des apostrophes typographiques qui drifent, et que sur les CVs multi-colonnes le LLM hallucine parfois son `context_before`.
 
@@ -128,26 +128,26 @@ Pourquoi cet ordre exact :
 
 2. **Tolérant.** Le LLM capitalise le premier mot d'une phrase, ou remplace `'` par `'` (apostrophe typographique). `_normalize` casefold le tout, remappe les guillemets et apostrophes typographiques vers leur version ASCII, et strippe la ponctuation que PyMuPDF colle aux tokens.
 
-3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte — c'est statistiquement sûr.
+3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte. C'est statistiquement sûr.
 
-4. **Substring du stream concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule string et chercher en sous-chaîne. **Gated** par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` matche dans `commune`, `lacune`, `tribune` — bonjour les faux positifs.
+4. **Substring du stream concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule string et chercher en sous-chaîne. On gate par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` matche dans `commune`, `lacune`, `tribune`. Bonjour les faux positifs.
 
 Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localisées »* du résultat plutôt que d'être silencieusement perdue. Une erreur visible que l'utilisateur peut lire mais qui n'a pas son rectangle rouge, c'est moins grave qu'une erreur dont on prétend qu'elle est ailleurs.
 
 ## Bilan
 
-Anonymiser pour un LLM, ce n'est pas une opération en un coup — c'est un cycle :
+Anonymiser pour un LLM, ce n'est pas une opération en un coup. C'est un cycle :
 
-1. **Anonymiser de façon cohérente.** Le même nom = le même placeholder partout. Sans ça, le LLM perd le fil.
+1. **Détecter les entités, pas leur format.** Une regex ne suffit pas pour les noms, entreprises ou dates. Il faut un détecteur entraîné.
 2. **Pouvoir dé-anonymiser des fragments.** Le LLM ne renvoie pas le texte qu'on lui a donné ; il renvoie des morceaux paraphrasés. Si ton outil ne sait dé-anonymiser qu'un texte entier, tu vas le découvrir à la dure.
 3. **Reconnecter le résultat à la source.** Si tu travailles sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Tu dois les retrouver après coup, et accepter que ce ne sera pas toujours possible.
 
 `piighost` couvre les deux premiers points out of the box. Le troisième est spécifique à mon projet, mais le code est ouvert.
 
-- **piighost** : [github.com/Athroniaeth/piighost](https://github.com/Athroniaeth/piighost) — la lib d'anonymisation utilisée ici.
-- **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader) — le projet complet, démo en ligne, locator inclus.
+- **piighost** : [github.com/Athroniaeth/piighost](https://github.com/Athroniaeth/piighost), la lib d'anonymisation utilisée ici.
+- **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader), le projet complet, démo en ligne, locator inclus.
 
-Issues et PR bienvenues. Si tu as un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement te concerner — n'hésite pas à ouvrir une discussion.
+Issues et PR bienvenues. Si tu as un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement te concerner. N'hésite pas à ouvrir une discussion.
 
 <!--
 SCREENSHOT TODO (avant publication):
