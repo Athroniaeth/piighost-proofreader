@@ -9,7 +9,7 @@ cover_image:
 
 ## TL;DR
 
-Pour relire ton CV avant un envoi important, tu peux le confier à un LLM. Quelques secondes, et tu as une liste de fautes. Sauf que tu viens aussi de donner ton nom, ton adresse, tes employeurs et tes dates à un service tiers.
+Pour relire votre CV avant un envoi important, vous pouvez le confier à un LLM. Quelques secondes, et vous avez une liste de fautes. Sauf que vous venez aussi de donner votre nom, votre adresse, vos employeurs et vos dates à un service tiers.
 
 `piighost-proofreader` corrige ce travers. Le CV passe par une anonymisation locale avant le LLM, puis les corrections sont reposées au bon mot sur le PDF d'origine :
 
@@ -76,7 +76,7 @@ async def deanonymize(self, text: str, *, thread_id: str) -> str:
 
 Concrètement, pour chaque `Mistake` que le LLM renvoie, je rappelle `deanonymize` sur chacun de ses quatre champs textuels. C'est plus de round-trips, mais c'est ce qui rend le pipeline robuste aux paraphrasages.
 
-À retenir : quand tu fais passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des fragments du texte original, pas le texte entier. Si ton outil d'anonymisation ne fait pas la distinction, tu vas te cogner contre ce mur.
+À retenir : quand vous faites passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des fragments du texte original, pas le texte entier. Si votre outil d'anonymisation ne fait pas la distinction, vous allez vous cogner contre ce mur.
 
 ## 3. Le retour sur PDF : quatre stratégies de fallback
 
@@ -139,15 +139,15 @@ Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localis�
 Anonymiser pour un LLM, ce n'est pas une opération en un coup. C'est un cycle :
 
 1. **Détecter les entités, pas leur format.** Une regex ne suffit pas pour les noms, entreprises ou dates. Il faut un détecteur entraîné.
-2. **Pouvoir dé-anonymiser des fragments.** Le LLM ne renvoie pas le texte qu'on lui a donné ; il renvoie des morceaux paraphrasés. Si ton outil ne sait dé-anonymiser qu'un texte entier, tu vas le découvrir à la dure.
-3. **Reconnecter le résultat à la source.** Si tu travailles sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Tu dois les retrouver après coup, et accepter que ce ne sera pas toujours possible.
+2. **Pouvoir dé-anonymiser des fragments.** Le LLM ne renvoie pas le texte qu'on lui a donné ; il renvoie des morceaux paraphrasés. Si votre outil ne sait dé-anonymiser qu'un texte entier, vous allez le découvrir à la dure.
+3. **Reconnecter le résultat à la source.** Si vous travaillez sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Vous devez les retrouver après coup, et accepter que ce ne sera pas toujours possible.
 
 `piighost` couvre les deux premiers points out of the box. Le troisième est spécifique à mon projet, mais le code est ouvert.
 
 - **piighost** : [github.com/Athroniaeth/piighost](https://github.com/Athroniaeth/piighost), la lib d'anonymisation utilisée ici.
 - **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader), le projet complet, démo en ligne, locator inclus.
 
-Issues et PR bienvenues. Si tu as un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement te concerner. N'hésite pas à ouvrir une discussion.
+Issues et PR bienvenues. Si vous avez un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement vous concerner. N'hésitez pas à ouvrir une discussion.
 
 <!--
 SCREENSHOT TODO (avant publication):
