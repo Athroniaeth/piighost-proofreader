@@ -18,7 +18,7 @@ flowchart LR
   PDF[PDF du CV] --> Markdown
   Markdown -->|anonymise| Anon[Markdown anonymisé]
   Anon --> LLM[GPT-5.5]
-  LLM -->|stream via instructor| Mistakes[Erreurs détectées]
+  LLM -->|via instructor| Mistakes[Erreurs détectées]
   Mistakes -->|locator + PyMuPDF bbox| PDF2[PDF + overlays rouges]
 ```
 
@@ -46,15 +46,15 @@ async def anonymize(self, text: str, *, thread_id: str) -> str:
     )
 ```
 
-Le `thread_id` est une UUID par CV. Le mapping entité→placeholder reste côté serveur, scopé par cet ID : un même nom devient le même placeholder à chaque occurrence.
+Le `thread_id` est une UUID par CV. Le mapping entité→placeholder reste côté serveur, isolé par cet ID : un même nom devient le même placeholder à chaque occurrence.
 
-## 2. Streamer les erreurs avec `instructor`
+## 2. Émettre les erreurs au fil de l'eau avec `instructor`
 
-Un CV de deux pages contient une bonne quinzaine de fautes, et le LLM prend plusieurs secondes pour les sortir. Sans streaming, l'utilisateur fixe un loader pendant tout ce temps. Avec streaming, les fautes apparaissent une par une au fur et à mesure que le modèle les émet.
+Un CV de deux pages contient une bonne quinzaine de fautes, et le LLM prend plusieurs secondes pour les sortir. Sans diffusion progressive, l'utilisateur fixe un écran d'attente pendant tout ce temps. Avec, les fautes apparaissent une par une au fur et à mesure que le modèle les émet.
 
-Le piège : la plupart des libs de structured output (LangChain `with_structured_output`, OpenAI Functions, Pydantic AI) renvoient le résultat *complet*. Vous demandez un `list[Mistake]`, vous recevez la liste entière une fois l'inférence terminée. Pas de granularité objet par objet.
+Le piège : la plupart des libs de sortie structurée (LangChain `with_structured_output`, OpenAI Functions, Pydantic AI) renvoient le résultat *complet*. Vous demandez un `list[Mistake]`, vous recevez la liste entière une fois l'inférence terminée. Pas de granularité objet par objet.
 
-`instructor` règle exactement ce cas. Sa méthode `create_iterable` parse le JSON streamé du LLM au fil de l'eau et yield chaque objet pydantic dès qu'il est complet :
+`instructor` règle exactement ce cas. Sa méthode `create_iterable` parse le JSON diffusé par le LLM au fil de l'eau et renvoie chaque objet pydantic dès qu'il est complet :
 
 ```python
 # src/proofreader/llm.py
@@ -73,17 +73,17 @@ async for mistake in response:
 
 Deux complications qui ne sautent pas aux yeux :
 
-1. **Le prompt change selon le mode.** Pour un `with_structured_output` LangChain, on demande au LLM de renvoyer un objet wrapper avec une liste de Mistakes dedans. Pour `create_iterable`, on lui demande d'émettre un seul Mistake JSON par tour de génération. Les deux prompts ne sont pas tout à fait les mêmes. Le projet maintient les deux côte à côte : LangChain pour le chemin Streamlit one-shot, `instructor` pour le streaming FastAPI.
+1. **Le prompt change selon le mode.** Pour un `with_structured_output` LangChain, on demande au LLM de renvoyer un objet conteneur avec une liste de Mistakes dedans. Pour `create_iterable`, on lui demande d'émettre un seul Mistake JSON par tour de génération. Les deux prompts ne sont pas tout à fait les mêmes. Le projet maintient les deux côte à côte : LangChain pour le chemin Streamlit (réponse en un coup), `instructor` pour le flux côté FastAPI.
 
-2. **Le streaming SSE en aval.** Chaque `Mistake` yieldé est immédiatement repackagé en event Server-Sent Events côté FastAPI, puis poussé au frontend. Le locator de la section suivante tourne *par-Mistake*, donc l'utilisateur voit chaque rectangle rouge apparaître au fur et à mesure, pas en bloc à la fin.
+2. **Le flux SSE en aval.** Chaque `Mistake` émis est immédiatement reconditionné en événement Server-Sent Events côté FastAPI, puis envoyé au frontend. Le locator de la section suivante tourne *par-Mistake*, donc l'utilisateur voit chaque rectangle rouge apparaître au fur et à mesure, pas en bloc à la fin.
 
-## 3. Le retour sur PDF : quatre stratégies de fallback
+## 3. Le retour sur PDF : quatre stratégies de repli
 
-Pour chaque `Mistake` que `instructor` yield, j'ai un `error_text`, un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
+Pour chaque `Mistake` qu'`instructor` renvoie, j'ai un `error_text`, un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
 
 Or l'utilisateur veut voir les corrections sur le PDF d'origine, pas un texte plat dans une page de résultats. Donc il faut, pour chaque erreur, retrouver le mot dans le PDF.
 
-Du côté PDF, j'utilise PyMuPDF, qui me donne un *word stream* : la liste de tous les mots de la page avec leurs `bbox` (rectangles en points). Le problème devient : trouver la fenêtre `[mot1, mot2, …]` dans cette liste. Sauf que le LLM et PyMuPDF ne tokenisent pas pareil, que les apostrophes typographiques ne sont pas alignées, et que sur un CV en deux colonnes le LLM hallucine parfois son `context_before`.
+Du côté PDF, j'utilise PyMuPDF, qui me donne un *flux de mots* : la liste de tous les mots de la page avec leurs `bbox` (rectangles en points). Le problème devient : trouver la fenêtre `[mot1, mot2, …]` dans cette liste. Sauf que le LLM et PyMuPDF ne tokenisent pas pareil, que les apostrophes typographiques ne sont pas alignées, et que sur un CV en deux colonnes le LLM hallucine parfois son `context_before`.
 
 D'où quatre stratégies essayées dans l'ordre. Chacune rattrape un cas que la précédente ne sait pas gérer :
 
@@ -123,22 +123,22 @@ def locate_mistake(mistake: Mistake, *, words: list[Word]) -> LocatedMistake | N
 
 Pourquoi cet ordre exact :
 
-1. **Strict.** La fenêtre `context_before + error_text` matche au mot près, sans normalisation. Le cas heureux : le LLM cite le PDF parfaitement, match exact, zéro ambiguïté.
+1. **Strict.** La fenêtre `context_before + error_text` correspond au mot près, sans normalisation. Le cas heureux : le LLM cite le PDF parfaitement, correspondance exacte, zéro ambiguïté.
 
-2. **Tolérant.** Le LLM capitalise le premier mot d'une phrase, ou remplace `'` par `'` (apostrophe typographique). `_normalize` casefold le tout, remappe les guillemets et apostrophes typographiques vers leur version ASCII, et strippe la ponctuation que PyMuPDF colle aux tokens.
+2. **Tolérant.** Le LLM capitalise le premier mot d'une phrase, ou remplace `'` par `'` (apostrophe typographique). `_normalize` uniformise la casse, remplace les guillemets et apostrophes typographiques par leur version ASCII, et retire la ponctuation que PyMuPDF colle aux tokens.
 
 3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte. Ça suffit dans la quasi-totalité des cas.
 
-4. **Substring du stream concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule string et chercher en sous-chaîne. On gate par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` matche dans `commune`, `lacune`, `tribune`. Bonjour les faux positifs.
+4. **Sous-chaîne du flux concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule chaîne et chercher en sous-chaîne. On filtre par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` se retrouve dans `commune`, `lacune`, `tribune`. Bonjour les faux positifs.
 
-Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localisées »* du résultat plutôt que d'être silencieusement perdue. Une erreur visible que l'utilisateur peut lire mais qui n'a pas son rectangle rouge, c'est moins grave qu'une erreur dont on prétend qu'elle est ailleurs.
+Si aucune des quatre n'attrape rien, l'erreur passe dans une section *« Non localisées »* du résultat plutôt que d'être silencieusement perdue. Une erreur visible que l'utilisateur peut lire mais qui n'a pas son rectangle rouge, c'est moins grave qu'une erreur dont on prétend qu'elle est ailleurs.
 
 ## Bilan
 
 Si vous bricolez quelque chose de similaire, trois choses à retenir :
 
 1. Une regex ne détecte pas les noms, entreprises ou dates. Il faut un détecteur entraîné.
-2. Si vous voulez streamer du structured output (objets pydantic au fil de l'eau, pas la liste entière à la fin), les libs habituelles ne suffisent pas. `instructor` est conçu pour ça.
+2. Si vous voulez diffuser de la sortie structurée (objets pydantic au fil de l'eau, pas la liste entière à la fin), les libs habituelles ne suffisent pas. `instructor` est conçu pour ça.
 3. Si le LLM travaille sur du texte extrait d'un document (PDF, OCR, scans), il vous rend des erreurs sans coordonnées. Vous devez les relocaliser après coup, et accepter que ce ne soit pas toujours possible.
 
 `piighost` règle le premier point. `instructor` règle le deuxième. Le troisième m'a fait écrire ce projet, dont le code est ouvert.
