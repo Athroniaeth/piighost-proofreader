@@ -134,4 +134,17 @@ Pourquoi cet ordre exact :
 
 Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localisées »* du résultat plutôt que d'être silencieusement perdue. Une erreur visible que l'utilisateur peut lire mais qui n'a pas son rectangle rouge, c'est moins grave qu'une erreur dont on prétend qu'elle est ailleurs.
 
-<!-- Section 4 — Bilan + CTA -->
+## Bilan
+
+Anonymiser pour un LLM, ce n'est pas une opération en un coup — c'est un cycle :
+
+1. **Anonymiser de façon cohérente.** Le même nom = le même placeholder partout. Sans ça, le LLM perd le fil.
+2. **Pouvoir dé-anonymiser des fragments.** Le LLM ne renvoie pas le texte qu'on lui a donné ; il renvoie des morceaux paraphrasés. Si ton outil ne sait dé-anonymiser qu'un texte entier, tu vas le découvrir à la dure.
+3. **Reconnecter le résultat à la source.** Si tu travailles sur des documents (PDF, OCR, scans), le LLM perd les coordonnées. Tu dois les retrouver après coup, et accepter que ce ne sera pas toujours possible.
+
+`piighost` couvre les deux premiers points out of the box. Le troisième est spécifique à mon projet, mais le code est ouvert.
+
+- **piighost** : [github.com/Athroniaeth/piighost](https://github.com/Athroniaeth/piighost) — la lib d'anonymisation utilisée ici.
+- **piighost-proofreader** : [github.com/Athroniaeth/piighost-proofreader](https://github.com/Athroniaeth/piighost-proofreader) — le projet complet, démo en ligne, locator inclus.
+
+Issues et PR bienvenues. Si tu as un pipeline LLM qui touche des documents perso, les trois points ci-dessus vont probablement te concerner — n'hésite pas à ouvrir une discussion.
