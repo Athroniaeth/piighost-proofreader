@@ -9,9 +9,9 @@ cover_image:
 
 ## TL;DR
 
-Un *proofreader*, c'est un relecteur automatique : tu lui donnes un texte, il te ressort les fautes. Pour bien le faire aujourd'hui, on s'appuie sur un LLM. Sauf qu'un CV est plein de données perso (nom, prénom, dates, adresses, entreprises) et qu'envoyer le tout brut à GPT-5.5, c'est confier ces données à un tiers.
+Pour relire ton CV avant un envoi important, tu peux le confier à un LLM. Quelques secondes, et tu as une liste de fautes. Sauf que tu viens aussi de donner ton nom, ton adresse, tes employeurs et tes dates à un service tiers.
 
-`piighost-proofreader` répond à cette tension. Le CV passe par une anonymisation locale avant le LLM, puis les corrections sont reposées au bon mot sur le PDF d'origine :
+`piighost-proofreader` corrige ce travers. Le CV passe par une anonymisation locale avant le LLM, puis les corrections sont reposées au bon mot sur le PDF d'origine :
 
 ```mermaid
 flowchart LR
