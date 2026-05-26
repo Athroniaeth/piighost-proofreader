@@ -78,6 +78,60 @@ Concrètement, pour chaque `Mistake` que le LLM renvoie, je rappelle `deanonymiz
 
 **À retenir** : quand tu fais passer du texte anonymisé dans un LLM, le « retour » de l'anonymisation doit pouvoir gérer des **fragments** du texte original, pas le texte entier. Si ton outil d'anonymisation ne fait pas la distinction, tu vas hit ce mur.
 
-<!-- Section 3 — Le locator -->
+## 3. Le retour sur PDF : quatre stratégies de fallback
+
+À ce stade, j'ai pour chaque erreur un `error_text` en clair (post-deanon), un `correction`, un `context_before`, et une `description`. Le LLM, lui, n'a jamais vu un seul pixel du PDF : il travaillait sur le Markdown extrait. Aucun champ ne contient des coordonnées.
+
+Or l'utilisateur veut **voir** les corrections sur le PDF d'origine — pas un texte plat dans une page de résultats. Donc il faut, pour chaque erreur, retrouver le mot dans le PDF.
+
+Du côté du PDF, j'utilise PyMuPDF, qui me donne un *word stream* : la liste de tous les mots de la page avec leurs `bbox` (rectangles en points). Le problème devient : *« trouver la fenêtre `[mot1, mot2, …]` dans cette liste »*. Sauf que le LLM et PyMuPDF tokenisent légèrement différemment, qu'il y a des apostrophes typographiques qui drifent, et que sur les CVs multi-colonnes le LLM hallucine parfois son `context_before`.
+
+D'où quatre stratégies essayées en cascade, chacune absorbant un mode d'échec spécifique de la précédente :
+
+```python
+# src/proofreader/locator.py
+def locate_mistake(mistake: Mistake, *, words: list[Word]) -> LocatedMistake | None:
+    err_tokens = mistake.error_text.split()
+    if not err_tokens:
+        return None
+    ctx_tokens = mistake.context_before.split()
+
+    # Strategy 1: strict whole-word match.
+    matched = _match_window(ctx_tokens, err_tokens, words, normalize=False)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 2: punctuation-tolerant (casefold + ASCII quotes + strip punct).
+    matched = _match_window(ctx_tokens, err_tokens, words, normalize=True)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 3: error_text alone if it appears exactly once on the page.
+    # Catches LLM context drift in multi-column layouts.
+    matched = _find_error_alone_if_unique(err_tokens, words)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    # Strategy 4: substring of the concatenated normalised stream. Handles LLM
+    # tokenisation drift like `d'une` → `d' + une`, where the standalone word
+    # has no PyMuPDF token equivalent.
+    matched = _find_error_as_substring_if_unique(err_tokens, words)
+    if matched is not None:
+        return _build_located(mistake, matched)
+
+    return None
+```
+
+Pourquoi cet ordre exact :
+
+1. **Strict.** La fenêtre `context_before + error_text` matche au mot près, sans normalisation. C'est le cas heureux : le LLM cite le PDF parfaitement, on évite les faux positifs. Quand ça marche, on a la confiance maximale.
+
+2. **Tolérant.** Le LLM capitalise le premier mot d'une phrase, ou remplace `'` par `'` (apostrophe typographique). `_normalize` casefold le tout, remappe les guillemets et apostrophes typographiques vers leur version ASCII, et strippe la ponctuation que PyMuPDF colle aux tokens.
+
+3. **Error-only unique.** Sur les CVs en deux colonnes, le `context_before` que le LLM produit est parfois pioché dans la *mauvaise* colonne (les modèles linéarisent maladroitement le multi-colonne). Si l'`error_text` n'apparaît qu'une fois sur la page, on prend, peu importe le contexte — c'est statistiquement sûr.
+
+4. **Substring du stream concaténé.** Cas tordu : `d'une` est un mot pour le LLM, mais PyMuPDF le tokenise en `d'` + `une`. Le LLM peut renvoyer `error_text="une"` comme mot isolé, sans token PyMuPDF correspondant. Solution : concaténer tous les tokens de la page en une seule string et chercher en sous-chaîne. **Gated** par `_MIN_SUBSTRING_CHARS = 5`, parce que sans ça un `error_text="une"` matche dans `commune`, `lacune`, `tribune` — bonjour les faux positifs.
+
+Si aucune des quatre ne matche, l'erreur passe dans une section *« Non localisées »* du résultat plutôt que d'être silencieusement perdue. Une erreur visible que l'utilisateur peut lire mais qui n'a pas son rectangle rouge, c'est moins grave qu'une erreur dont on prétend qu'elle est ailleurs.
 
 <!-- Section 4 — Bilan + CTA -->
