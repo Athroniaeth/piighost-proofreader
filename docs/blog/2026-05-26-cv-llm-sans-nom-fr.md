@@ -22,7 +22,7 @@ flowchart LR
   Mistakes -->|locator + PyMuPDF bbox| PDF2[PDF + overlays rouges]
 ```
 
-![Rendu final : le PDF du CV avec les rectangles rouges sur les erreurs détectées](https://placehold.co/1200x675?text=Replace+with+real+screenshot)
+![Rendu final : le PDF d'un CV avec 11 fautes annotées et la liste des corrections proposées par GPT-5.5](./assets/2026-05-26-cv-result-desktop.png)
 
 Le LLM ne voit jamais un nom, une date, une adresse.
 
@@ -149,12 +149,7 @@ Si vous bricolez quelque chose de similaire, trois choses à retenir :
 Issues et PR bienvenues. Si vous travaillez sur du texte privé avec un LLM, les trois points ci-dessus vont probablement vous parler.
 
 <!--
-SCREENSHOT TODO (avant publication):
-1. uv run python samples/build_samples.py
-2. uv run streamlit run app.py
-3. upload samples/cv_fr.pdf in the UI
-4. wait for the run to finish, take a screenshot of the rendered first page with overlays
-5. upload the screenshot to dev.to (drag-and-drop in the editor — Forem hosts it)
-6. replace the placehold.co URL above with the dev.to-hosted URL
-7. (optional) take a second screenshot of the "Non localisées" section for the end of section 3 — same upload flow
+SCREENSHOT: docs/blog/assets/2026-05-26-cv-result-desktop.png (already captured, 1600x900).
+Before publishing on dev.to: drag-drop the PNG into the dev.to editor so Forem hosts it,
+then replace the relative ./assets/... path above with the dev.to-hosted URL.
 -->
