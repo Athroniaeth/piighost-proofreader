@@ -2,6 +2,7 @@ import type { LocatedMistake, ProgressStep } from "@/lib/types";
 import type { MistakesState, MistakesAction } from "@/hooks/useMistakesStore";
 import MistakeCard from "./MistakeCard";
 import { Checkbox } from "@/components/tailgrids/core/checkbox";
+import { useT } from "@/i18n/LanguageContext";
 
 interface Props {
   mistakes: LocatedMistake[];
@@ -11,22 +12,24 @@ interface Props {
   progress: ProgressStep;
 }
 
-const PROGRESS_LABEL: Record<ProgressStep, string> = {
-  extracted: "Chargement des détections…",
-  anonymized: "Chargement des détections…",
-  "llm-started": "Chargement des détections…",
-  done: "",
-};
-
 export default function MistakesPanel({ mistakes, state, dispatch, streaming, progress }: Props) {
+  const { t } = useT();
+
+  const PROGRESS_LABEL: Record<ProgressStep, string> = {
+    extracted: t("mistakes_loading"),
+    anonymized: t("mistakes_loading"),
+    "llm-started": t("mistakes_loading"),
+    done: "",
+  };
+
   if (mistakes.length === 0 && !streaming) {
     return (
       <div className="h-full flex items-center justify-center px-8">
         <div className="text-center max-w-[240px]">
           <div className="text-3xl mb-3">✅</div>
-          <div className="text-lg font-semibold mb-2">Aucune faute détectée</div>
+          <div className="text-lg font-semibold mb-2">{t("mistakes_no_mistakes_title")}</div>
           <div className="text-base text-text-100 leading-relaxed">
-            Le LLM a analysé votre CV et n'a rien trouvé à corriger.
+            {t("mistakes_no_mistakes_body")}
           </div>
         </div>
       </div>
@@ -43,9 +46,9 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
           checked={allChecked}
           onChange={() => dispatch({ type: "SET_ALL", enabled: !allChecked })}
         />
-        <span className="text-xs text-text-100">Tout cocher / décocher</span>
+        <span className="text-xs text-text-100">{t("mistakes_toggle_all")}</span>
         <span className="text-xs text-text-100 ml-auto">
-          {visible} / {mistakes.length} visibles
+          {t("mistakes_visible_count", { shown: visible, total: mistakes.length })}
         </span>
       </div>
 
@@ -58,12 +61,12 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
       ) : progress === "done" ? (
         <div className="flex items-center gap-2 mb-3 p-2.5 rounded-md bg-badge-success-background text-sm text-badge-success-text">
           <span>✅</span>
-          <span>Analyse terminée · {mistakes.length} faute{mistakes.length > 1 ? "s" : ""}</span>
+          <span>{t("mistakes_done_count", { n: mistakes.length })}</span>
         </div>
       ) : null}
 
       <p className="text-[11px] text-text-200 italic mb-3">
-        Cliquez sur une faute pour la mettre en évidence sur le PDF.
+        {t("mistakes_click_hint")}
       </p>
       {mistakes.map((m, i) => (
         <MistakeCard

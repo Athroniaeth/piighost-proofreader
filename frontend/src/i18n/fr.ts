@@ -56,4 +56,11 @@ export const fr: Record<TranslationKey, string> = {
     "piighost-api n'a rien repéré. Sélectionnez du texte sur le PDF pour anonymiser manuellement.",
   detections_manual_badge: "manuel",
   detections_remove: "Retirer cette détection",
+  mistakes_loading: "Chargement des détections…",
+  mistakes_no_mistakes_title: "Aucune faute détectée",
+  mistakes_no_mistakes_body: "Le LLM a analysé votre CV et n'a rien trouvé à corriger.",
+  mistakes_toggle_all: "Tout cocher / décocher",
+  mistakes_visible_count: "{shown} / {total} visibles",
+  mistakes_done_count: "Analyse terminée · {n} fautes",
+  mistakes_click_hint: "Cliquez sur une faute pour la mettre en évidence sur le PDF.",
 };

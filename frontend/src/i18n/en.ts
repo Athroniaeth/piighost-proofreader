@@ -54,4 +54,11 @@ export const en = {
     "piighost-api found nothing. Select text on the PDF to anonymize manually.",
   detections_manual_badge: "manual",
   detections_remove: "Remove this detection",
+  mistakes_loading: "Loading detections…",
+  mistakes_no_mistakes_title: "No mistakes detected",
+  mistakes_no_mistakes_body: "The LLM analyzed your CV and found nothing to correct.",
+  mistakes_toggle_all: "Toggle all",
+  mistakes_visible_count: "{shown} / {total} visible",
+  mistakes_done_count: "Analysis complete · {n} mistakes",
+  mistakes_click_hint: "Click on a mistake to highlight it on the PDF.",
 } as const;
