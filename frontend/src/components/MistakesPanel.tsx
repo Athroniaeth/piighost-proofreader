@@ -3,6 +3,7 @@ import type { MistakesState, MistakesAction } from "@/hooks/useMistakesStore";
 import MistakeCard from "./MistakeCard";
 import { Checkbox } from "@/components/tailgrids/core/checkbox";
 import { useT } from "@/i18n/LanguageContext";
+import { plural } from "@/i18n/plural";
 
 interface Props {
   mistakes: LocatedMistake[];
@@ -61,7 +62,7 @@ export default function MistakesPanel({ mistakes, state, dispatch, streaming, pr
       ) : progress === "done" ? (
         <div className="flex items-center gap-2 mb-3 p-2.5 rounded-md bg-badge-success-background text-sm text-badge-success-text">
           <span>✅</span>
-          <span>{t("mistakes_done_count", { n: mistakes.length })}</span>
+          <span>{t("mistakes_done_prefix") + plural(t, mistakes.length, "mistake")}</span>
         </div>
       ) : null}
 

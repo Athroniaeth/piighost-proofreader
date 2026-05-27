@@ -1,11 +1,13 @@
+import { useT } from "@/i18n/LanguageContext";
+
 interface Props {
   /** 1-based index of the current step (1, 2 or 3). */
   current: 1 | 2 | 3;
 }
 
-const STEPS = ["Anonymisation", "Correction", "Résultat"] as const;
-
 export default function StepIndicator({ current }: Props) {
+  const { t } = useT();
+  const STEPS = [t("step_anonymisation"), t("step_correction"), t("step_result")] as const;
   return (
     <div className="flex items-center justify-center gap-2 mb-4">
       {STEPS.map((label, idx) => {

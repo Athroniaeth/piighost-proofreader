@@ -27,7 +27,7 @@ export default function TopBar({
   if (streaming) {
     badge = (
       <Badge color="primary" size="sm">
-        {t("topbar_streaming", { n: mistakeCount })}
+        {plural(t, mistakeCount, "mistake") + t("topbar_streaming_suffix")}
       </Badge>
     );
   } else if (mistakeCount === 0) {
