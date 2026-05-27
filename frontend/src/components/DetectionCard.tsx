@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/i18n/LanguageContext";
 import type { PageDetection } from "@/lib/types";
 
 interface Props {
@@ -13,12 +14,13 @@ interface Props {
 export default function DetectionCard({
   detection, active, labels, onActivate, onRemove, onRelabel,
 }: Props) {
+  const { t } = useT();
   const [labelMenuOpen, setLabelMenuOpen] = useState(false);
   const ring = active
     ? "border border-amber-200 bg-amber-50"
     : "border border-base-100 bg-background-50";
   const manualBadge = detection.manual ? (
-    <span className="text-[10px] italic text-text-200 ml-2">manuel</span>
+    <span className="text-[10px] italic text-text-200 ml-2">{t("detections_manual_badge")}</span>
   ) : null;
 
   return (
@@ -79,7 +81,8 @@ export default function DetectionCard({
           onRemove();
         }}
         className="text-text-200 hover:text-button-error-background text-sm leading-none p-1"
-        title="Retirer cette détection"
+        title={t("detections_remove")}
+        aria-label={t("detections_remove")}
       >
         ✕
       </button>

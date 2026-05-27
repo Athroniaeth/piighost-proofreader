@@ -44,4 +44,16 @@ export const fr: Record<TranslationKey, string> = {
   error_try_another_pdf: "Essayer un autre PDF",
   error_retry_button: "Réessayer",
   error_back_button: "Retour",
+  detections_title: "Anonymisation des données",
+  detections_intro_before:
+    "Vos données personnelles ont été détectées et seront anonymisées avant l'envoi au modèle d'analyse. Si une donnée à protéger a été oubliée, ",
+  detections_intro_bold: "sélectionnez-la directement sur le PDF",
+  detections_intro_after: " pour l'ajouter à la liste.",
+  detections_help:
+    "En cas d'erreur, cliquez la croix de la carte concernée pour la retirer, ou son label pour changer de catégorie.",
+  detections_empty_title: "Aucune entité détectée",
+  detections_empty_body:
+    "piighost-api n'a rien repéré. Sélectionnez du texte sur le PDF pour anonymiser manuellement.",
+  detections_manual_badge: "manuel",
+  detections_remove: "Retirer cette détection",
 };

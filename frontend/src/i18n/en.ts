@@ -42,4 +42,16 @@ export const en = {
   error_try_another_pdf: "Try another PDF",
   error_retry_button: "Try again",
   error_back_button: "Back",
+  detections_title: "Data anonymization",
+  detections_intro_before:
+    "Your personal data has been detected and will be anonymized before being sent to the analysis model. If any data that needs protecting was missed, ",
+  detections_intro_bold: "select it directly on the PDF",
+  detections_intro_after: " to add it to the list.",
+  detections_help:
+    "If something was added by mistake, click the ✕ on that card to remove it, or its label to change the category.",
+  detections_empty_title: "No entities detected",
+  detections_empty_body:
+    "piighost-api found nothing. Select text on the PDF to anonymize manually.",
+  detections_manual_badge: "manual",
+  detections_remove: "Remove this detection",
 } as const;
