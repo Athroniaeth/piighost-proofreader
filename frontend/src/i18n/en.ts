@@ -17,4 +17,23 @@ export const en = {
   mistake_other: "{n} mistakes",
   entity_one: "{n} entity",
   entity_other: "{n} entities",
+  error_too_large_title: "File too large",
+  error_too_large_body: "{sizeMb} MB · 10 MB limit",
+  error_not_pdf_title: "Unsupported format",
+  error_not_pdf_body: "Only PDF files are accepted.",
+  error_no_text_layer_title: "Unreadable PDF",
+  error_no_text_layer_body:
+    "No text found. The PDF appears to be a scan; OCR is not supported.",
+  error_backend_down_title: "Service unavailable",
+  error_backend_down_body:
+    "Try again in a moment. If it persists, report on GitHub.",
+  error_rate_limit_title: "Too many requests",
+  error_rate_limit_body:
+    "Quota reached for this IP. Try again in {retryInSec} seconds.",
+  error_internal_title: "Internal error",
+  error_internal_body: "An unexpected error occurred.",
+  error_choose_another_file: "Choose another file",
+  error_try_another_pdf: "Try another PDF",
+  error_retry_button: "Try again",
+  error_back_button: "Back",
 } as const;

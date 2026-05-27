@@ -19,4 +19,23 @@ export const fr: Record<TranslationKey, string> = {
   mistake_other: "{n} fautes",
   entity_one: "{n} entité",
   entity_other: "{n} entités",
+  error_too_large_title: "Fichier trop volumineux",
+  error_too_large_body: "{sizeMb} Mo · limite 10 Mo",
+  error_not_pdf_title: "Format non supporté",
+  error_not_pdf_body: "Uniquement les fichiers PDF sont acceptés.",
+  error_no_text_layer_title: "PDF non lisible",
+  error_no_text_layer_body:
+    "Aucun texte trouvé. Le PDF semble être un scan, l'OCR n'est pas supporté.",
+  error_backend_down_title: "Service indisponible",
+  error_backend_down_body:
+    "Réessayez dans quelques instants. Si ça persiste, signalez sur GitHub.",
+  error_rate_limit_title: "Trop de requêtes",
+  error_rate_limit_body:
+    "Quota atteint pour cette IP. Réessayez dans {retryInSec} secondes.",
+  error_internal_title: "Erreur interne",
+  error_internal_body: "Une erreur inattendue s'est produite.",
+  error_choose_another_file: "Choisir un autre fichier",
+  error_try_another_pdf: "Essayer un autre PDF",
+  error_retry_button: "Réessayer",
+  error_back_button: "Retour",
 };

@@ -1,5 +1,6 @@
 import type { ErrorReason, ErrorDetails } from "@/hooks/useAppState";
 import { Button } from "@/components/tailgrids/core/button";
+import { useT } from "@/i18n/LanguageContext";
 
 interface Props {
   reason: ErrorReason;
@@ -7,64 +8,67 @@ interface Props {
   onReset: () => void;
 }
 
-const PRESETS: Record<
-  ErrorReason,
-  {
-    icon: string;
-    title: string;
-    body: (d?: ErrorDetails) => string;
-    tone: "red" | "amber";
-    action: string;
-  }
-> = {
-  "too-large": {
-    icon: "⚠️",
-    title: "Fichier trop volumineux",
-    body: (d) => `${(d?.sizeMb ?? 0).toFixed(1)} Mo · limite 10 Mo`,
-    tone: "red",
-    action: "Choisir un autre fichier",
-  },
-  "not-pdf": {
-    icon: "📄❌",
-    title: "Format non supporté",
-    body: () => "Uniquement les fichiers PDF sont acceptés.",
-    tone: "red",
-    action: "Choisir un autre fichier",
-  },
-  "no-text-layer": {
-    icon: "📄❌",
-    title: "PDF non lisible",
-    body: () =>
-      "Aucun texte trouvé. Le PDF semble être un scan, l'OCR n'est pas supporté.",
-    tone: "red",
-    action: "Essayer un autre PDF",
-  },
-  "backend-down": {
-    icon: "🔌",
-    title: "Service indisponible",
-    body: () =>
-      "Réessayez dans quelques instants. Si ça persiste, signalez sur GitHub.",
-    tone: "amber",
-    action: "Réessayer",
-  },
-  "rate-limit": {
-    icon: "⏳",
-    title: "Trop de requêtes",
-    body: (d) =>
-      `Quota atteint pour cette IP. Réessayez dans ${d?.retryInSec ?? 120} secondes.`,
-    tone: "amber",
-    action: "Réessayer",
-  },
-  internal: {
-    icon: "⚠️",
-    title: "Erreur interne",
-    body: (d) => d?.message ?? "Une erreur inattendue s'est produite.",
-    tone: "red",
-    action: "Retour",
-  },
-};
-
 export default function ErrorState({ reason, details, onReset }: Props) {
+  const { t } = useT();
+
+  const PRESETS: Record<
+    ErrorReason,
+    {
+      icon: string;
+      title: string;
+      body: string;
+      tone: "red" | "amber";
+      action: string;
+    }
+  > = {
+    "too-large": {
+      icon: "⚠️",
+      title: t("error_too_large_title"),
+      body: t("error_too_large_body", {
+        sizeMb: (details?.sizeMb ?? 0).toFixed(1),
+      }),
+      tone: "red",
+      action: t("error_choose_another_file"),
+    },
+    "not-pdf": {
+      icon: "📄❌",
+      title: t("error_not_pdf_title"),
+      body: t("error_not_pdf_body"),
+      tone: "red",
+      action: t("error_choose_another_file"),
+    },
+    "no-text-layer": {
+      icon: "📄❌",
+      title: t("error_no_text_layer_title"),
+      body: t("error_no_text_layer_body"),
+      tone: "red",
+      action: t("error_try_another_pdf"),
+    },
+    "backend-down": {
+      icon: "🔌",
+      title: t("error_backend_down_title"),
+      body: t("error_backend_down_body"),
+      tone: "amber",
+      action: t("error_retry_button"),
+    },
+    "rate-limit": {
+      icon: "⏳",
+      title: t("error_rate_limit_title"),
+      body: t("error_rate_limit_body", {
+        retryInSec: details?.retryInSec ?? 120,
+      }),
+      tone: "amber",
+      action: t("error_retry_button"),
+    },
+    internal: {
+      icon: "⚠️",
+      title: t("error_internal_title"),
+      body: details?.message ?? t("error_internal_body"),
+      tone: "red",
+      action: t("error_back_button"),
+    },
+  };
+
   const p = PRESETS[reason];
   const border =
     p.tone === "amber"
@@ -76,7 +80,7 @@ export default function ErrorState({ reason, details, onReset }: Props) {
       <div className={`max-w-md mx-auto text-center p-8 border rounded-2xl ${border}`}>
         <div className="text-4xl mb-2">{p.icon}</div>
         <div className={`font-semibold mb-1 ${text}`}>{p.title}</div>
-        <div className={`text-sm ${text}`}>{p.body(details)}</div>
+        <div className={`text-sm ${text}`}>{p.body}</div>
         <div className="mt-4">
           <Button variant="primary" appearance="fill" size="md" onClick={onReset}>
             {p.action}
