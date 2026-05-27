@@ -8,6 +8,7 @@ import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ResultsState from "@/components/ResultsState";
 import ReviewState from "@/components/ReviewState";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import sampleResult from "@/fixtures/sample-result.json";
 import sampleDetections from "@/fixtures/sample-detections.json";
 import samplePdfUrl from "@/fixtures/sample-cv.pdf?url";
@@ -84,56 +85,65 @@ export default function App() {
     }
   }, [state, fake, dispatch, startStream]);
 
-  switch (state.kind) {
-    case "empty":
-      return (
-        <EmptyState
-          onFile={(file) => startDetect(file)}
-          onReject={(r) => {
-            if (r.reason === "too-large") {
-              dispatch({
-                type: "ERROR",
-                reason: "too-large",
-                details: { sizeMb: r.sizeMb },
-              });
-            } else {
-              dispatch({ type: "ERROR", reason: "not-pdf" });
-            }
-          }}
-        />
-      );
-    case "loading-detect":
-      return <LoadingState currentStep={1} message="Extraction du texte · Détection des PII" />;
-    case "reviewing":
-      return (
-        <ReviewState
-          filename={state.filename}
-          pdfBytes={state.pdfBytes}
-          page_sizes={state.page_sizes}
-          detections={state.detections}
-          pendingOverrides={state.pendingOverrides}
-          dispatch={dispatch}
-        />
-      );
-    case "loading-proofread":
-      return <LoadingState currentStep={2} message="Anonymisation · Lancement de l'analyse" />;
-    case "error":
-      return (
-        <ErrorState
-          reason={state.reason}
-          details={state.details}
-          onReset={() => dispatch({ type: "RESET" })}
-        />
-      );
-    case "results":
-      return (
-        <ResultsState
-          data={state.data}
-          pdfBytes={state.pdfBytes}
-          streaming={state.streaming}
-          progress={state.progress}
-          onReset={() => dispatch({ type: "RESET" })}
-        />
-      );
-  }
+  const screen = (() => {
+    switch (state.kind) {
+      case "empty":
+        return (
+          <EmptyState
+            onFile={(file) => startDetect(file)}
+            onReject={(r) => {
+              if (r.reason === "too-large") {
+                dispatch({
+                  type: "ERROR",
+                  reason: "too-large",
+                  details: { sizeMb: r.sizeMb },
+                });
+              } else {
+                dispatch({ type: "ERROR", reason: "not-pdf" });
+              }
+            }}
+          />
+        );
+      case "loading-detect":
+        return <LoadingState currentStep={1} messageKey="loading_steps_detect" />;
+      case "reviewing":
+        return (
+          <ReviewState
+            filename={state.filename}
+            pdfBytes={state.pdfBytes}
+            page_sizes={state.page_sizes}
+            detections={state.detections}
+            pendingOverrides={state.pendingOverrides}
+            dispatch={dispatch}
+          />
+        );
+      case "loading-proofread":
+        return <LoadingState currentStep={2} messageKey="loading_steps_proofread" />;
+      case "error":
+        return (
+          <ErrorState
+            reason={state.reason}
+            details={state.details}
+            onReset={() => dispatch({ type: "RESET" })}
+          />
+        );
+      case "results":
+        return (
+          <ResultsState
+            data={state.data}
+            pdfBytes={state.pdfBytes}
+            streaming={state.streaming}
+            progress={state.progress}
+            onReset={() => dispatch({ type: "RESET" })}
+          />
+        );
+    }
+  })();
+
+  return (
+    <>
+      <LanguageSwitcher />
+      {screen}
+    </>
+  );
 }
