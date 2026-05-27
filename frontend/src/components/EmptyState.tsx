@@ -3,6 +3,7 @@ import { UploadCloud } from "@tailgrids/icons";
 import { validateFile, type ValidationResult } from "@/lib/upload";
 import { buttonStyles } from "@/components/tailgrids/core/button";
 import { cn } from "@/utils/cn";
+import { useT } from "@/i18n/LanguageContext";
 
 interface Props {
   onFile: (file: File) => void;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function EmptyState({ onFile, onReject }: Props) {
+  const { t } = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setDragOver] = useState(false);
 
@@ -35,10 +37,9 @@ export default function EmptyState({ onFile, onReject }: Props) {
     <section className="min-h-screen flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-xl text-center">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">ProofReader</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{t("app_name")}</h1>
           <p className="text-sm text-text-100 mb-8 max-w-sm mx-auto">
-            Glissez un PDF, le LLM repère orthographe, grammaire, accord,
-            conjugaison et ponctuation.
+            {t("empty_tagline")}
           </p>
 
           {/* FileUpload card — drag area, cloud icon, Browse File styled div */}
@@ -60,10 +61,10 @@ export default function EmptyState({ onFile, onReject }: Props) {
                   <UploadCloud className="size-6" />
                 </div>
                 <p className="text-title-50 mb-1 text-sm font-medium">
-                  Glissez le PDF du CV ou cliquez pour parcourir
+                  {t("empty_dropzone_title")}
                 </p>
                 <p className="text-text-100 mb-6 text-xs">
-                  PDF uniquement · 10 Mo max · texte (pas un scan)
+                  {t("empty_dropzone_hint")}
                 </p>
                 <input
                   id="file-upload"
@@ -83,16 +84,14 @@ export default function EmptyState({ onFile, onReject }: Props) {
                     size: "sm",
                   })}
                 >
-                  Parcourir mes fichiers
+                  {t("empty_browse_button")}
                 </div>
               </label>
             </div>
           </div>
 
           <p className="text-xs text-text-100 mt-6 leading-relaxed max-w-[460px] mx-auto">
-            🔒 Aucune donnée personnelle ne sort de votre processus. Le contenu
-            de votre CV est anonymisé via piighost-api avant d'être envoyé au
-            modèle de langage.
+            {t("empty_privacy_note")}
           </p>
         </div>
       </div>
@@ -103,7 +102,7 @@ export default function EmptyState({ onFile, onReject }: Props) {
           target="_blank"
           rel="noopener"
           className="inline-flex items-center justify-center w-9 h-9 rounded-full text-text-200 hover:text-text-50"
-          title="Code source GitHub"
+          title={t("empty_github_title")}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
