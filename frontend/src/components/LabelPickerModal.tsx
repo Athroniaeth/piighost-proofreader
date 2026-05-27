@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/tailgrids/core/button";
+import { useT } from "@/i18n/LanguageContext";
 
 interface Props {
   open: boolean;
@@ -14,6 +15,7 @@ interface Props {
 export default function LabelPickerModal({
   open, initialText, labels, onPick, onClose,
 }: Props) {
+  const { t } = useT();
   const [text, setText] = useState<string>("");
   const [selected, setSelected] = useState<string>("");
 
@@ -37,20 +39,20 @@ export default function LabelPickerModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-semibold mb-2">
-          Texte à anonymiser&nbsp;:
+          {t("modal_title")}
         </h3>
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="ex. Pierre Dupont"
+          placeholder={t("modal_input_placeholder")}
           className="w-full bg-background-soft-50 border border-base-100 rounded p-2 text-sm mb-1 focus:outline-none focus:border-primary-500"
           autoFocus
         />
         <p className="text-[11px] text-text-200 italic mb-4">
-          Toutes les occurrences exactes seront anonymisées.
+          {t("modal_all_occurrences_note")}
         </p>
-        <h3 className="text-sm font-semibold mb-2">Comme&nbsp;:</h3>
+        <h3 className="text-sm font-semibold mb-2">{t("modal_label_heading")}</h3>
         <div className="max-h-48 overflow-y-auto mb-4 space-y-1">
           {labels.map((label) => (
             <label
@@ -70,7 +72,7 @@ export default function LabelPickerModal({
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="primary" appearance="outline" size="sm" onClick={onClose}>
-            Annuler
+            {t("modal_cancel")}
           </Button>
           <Button
             variant="primary"
@@ -79,7 +81,7 @@ export default function LabelPickerModal({
             onClick={() => canSubmit && onPick(text.trim(), selected)}
             disabled={!canSubmit}
           >
-            Ajouter
+            {t("modal_add_button")}
           </Button>
         </div>
       </div>

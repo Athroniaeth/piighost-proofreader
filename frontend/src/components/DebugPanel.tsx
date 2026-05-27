@@ -1,11 +1,13 @@
 import type { ProofreadResult } from "@/lib/types";
 import { Button } from "@/components/tailgrids/core/button";
+import { useT } from "@/i18n/LanguageContext";
 
 interface Props {
   data: ProofreadResult;
 }
 
 export default function DebugPanel({ data }: Props) {
+  const { t } = useT();
   const downloadDump = () => {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -23,7 +25,7 @@ export default function DebugPanel({ data }: Props) {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">Debug</h2>
           <Button variant="primary" appearance="outline" size="sm" onClick={downloadDump}>
-            Télécharger le dump (JSON)
+            {t("debug_download_button")}
           </Button>
         </div>
         <p className="text-xs text-text-100 mb-3">
@@ -33,7 +35,7 @@ export default function DebugPanel({ data }: Props) {
         </p>
         <details className="mb-2">
           <summary className="text-xs font-semibold cursor-pointer">
-            Markdown extrait
+            {t("debug_markdown_raw")}
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60 whitespace-pre-wrap">
             {data.markdown_raw ?? "—"}
@@ -41,7 +43,7 @@ export default function DebugPanel({ data }: Props) {
         </details>
         <details className="mb-2">
           <summary className="text-xs font-semibold cursor-pointer">
-            Markdown anonymisé (envoyé au LLM)
+            {t("debug_markdown_anonymized")}
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60 whitespace-pre-wrap">
             {data.markdown_anonymized ?? "—"}
@@ -49,7 +51,7 @@ export default function DebugPanel({ data }: Props) {
         </details>
         <details className="mb-2">
           <summary className="text-xs font-semibold cursor-pointer">
-            Fautes (JSON)
+            {t("debug_mistakes")}
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60">
             {JSON.stringify(data.mistakes, null, 2)}
@@ -57,7 +59,7 @@ export default function DebugPanel({ data }: Props) {
         </details>
         <details>
           <summary className="text-xs font-semibold cursor-pointer">
-            Word stream (PyMuPDF)
+            {t("debug_word_stream")}
           </summary>
           <pre className="text-[11px] bg-background-soft-50 p-2 mt-1 rounded overflow-auto max-h-60">
             {JSON.stringify(data.word_stream ?? [], null, 2)}
