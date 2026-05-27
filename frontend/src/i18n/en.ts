@@ -25,7 +25,7 @@ export const en = {
   topbar_no_mistakes: "no mistakes",
   review_cancel: "Cancel",
   review_analyze_button: "Analyze the CV →",
-  review_entities_badge: "{n} entities to anonymize",
+  review_entities_suffix: " to anonymize",
   error_too_large_title: "File too large",
   error_too_large_body: "{sizeMb} MB · 10 MB limit",
   error_not_pdf_title: "Unsupported format",

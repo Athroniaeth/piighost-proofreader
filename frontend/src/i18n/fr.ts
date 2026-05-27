@@ -27,7 +27,7 @@ export const fr: Record<TranslationKey, string> = {
   topbar_no_mistakes: "aucune faute",
   review_cancel: "Annuler",
   review_analyze_button: "Analyser le CV →",
-  review_entities_badge: "{n} entité(s) à anonymiser",
+  review_entities_suffix: " à anonymiser",
   error_too_large_title: "Fichier trop volumineux",
   error_too_large_body: "{sizeMb} Mo · limite 10 Mo",
   error_not_pdf_title: "Format non supporté",
