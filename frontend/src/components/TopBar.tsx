@@ -1,5 +1,7 @@
 import { Badge } from "@/components/tailgrids/core/badge";
 import { Button } from "@/components/tailgrids/core/button";
+import { useT } from "@/i18n/LanguageContext";
+import { plural } from "@/i18n/plural";
 
 interface Props {
   filename: string;
@@ -20,20 +22,21 @@ export default function TopBar({
   onToggleDebug,
   onReset,
 }: Props) {
+  const { t } = useT();
   let badge;
   if (streaming) {
     badge = (
       <Badge color="primary" size="sm">
-        {mistakeCount} fautes · en cours…
+        {t("topbar_streaming", { n: mistakeCount })}
       </Badge>
     );
   } else if (mistakeCount === 0) {
     badge = (
-      <Badge color="success" size="sm">aucune faute</Badge>
+      <Badge color="success" size="sm">{t("topbar_no_mistakes")}</Badge>
     );
   } else {
     badge = (
-      <Badge color="primary" size="sm">{mistakeCount} fautes</Badge>
+      <Badge color="primary" size="sm">{plural(t, mistakeCount, "mistake")}</Badge>
     );
   }
   return (
@@ -54,7 +57,7 @@ export default function TopBar({
           </Button>
         )}
         <Button variant="primary" appearance="outline" size="sm" onClick={onReset}>
-          ↻ Nouveau PDF
+          {t("topbar_new_pdf")}
         </Button>
       </div>
     </div>
