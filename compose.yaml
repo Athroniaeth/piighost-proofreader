@@ -57,6 +57,18 @@ services:
     depends_on:
       piighost-api:
         condition: service_started
+    healthcheck:
+      # The venv's python, since the base image carries no curl. /health is
+      # the route the API already exposes, and it costs nothing to answer.
+      test:
+        - CMD
+        - /app/.venv/bin/python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://127.0.0.1:8001/health")
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   # ----- React frontend (nginx serving dist + reverse-proxy /api) -----
@@ -82,7 +94,17 @@ services:
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # Alpine's busybox wget; the image has no curl. This is the service
+      # Coolify routes the domain to, so without it the resource reports
+      # "Running (no healthcheck)" and a broken frontend still counts as up.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   # ----- Legacy Streamlit UI (kept for debug, started via `--profile legacy`) -----
