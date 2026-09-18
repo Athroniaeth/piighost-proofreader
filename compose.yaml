@@ -18,9 +18,19 @@ services:
     # For local dev that needs a host binding, use compose.infra.yml
     # which keeps `127.0.0.1:8000:8000`.
     environment:
+      # No API key, and anonymous access opted into explicitly. The client in
+      # src/proofreader/anonymize.py sends no key — no header, nothing — so an
+      # authenticated API here could never be called by the only service that
+      # calls it, and keyshield rejected the empty API_KEY_default with
+      # "API key format is invalid (wrong number of segments)" before the
+      # server ever started.
+      #
+      # This is not a hole: piighost-api publishes no port, Coolify routes no
+      # domain to it, and it is reachable only from this project's docker
+      # network. The day it gets a domain, give the client a key instead —
+      # keyshield expects ak_v1-<id>-<secret> — and drop this line.
+      - PIIGHOST_ALLOW_ANONYMOUS=true
       - REDIS_URL=redis://redis:6379
-      - SECRET_PEPPER=${SECRET_PEPPER:-}
-      - API_KEY_default=${PIIGHOST_API_KEY:-}
     depends_on:
       redis:
         condition: service_healthy
