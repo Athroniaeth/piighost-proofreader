@@ -67,6 +67,29 @@ US_ZIP_CODE = '\b\d{5}(?:-\d{4})?\b'
 US_EIN = '\b\d{2}-\d{7}\b'
 US_BANK_ROUTING = '\b\d{9}\b'
 
+# piighost-api serves conversations, so it builds a thread pipeline and refuses
+# a configuration without a memory: "this configuration declares no memory; use
+# load_pipeline". Redis rather than in_memory because the stack already runs
+# one, and because a token has to stay stable across every request of a thread,
+# not just within one process.
+[memory]
+type = "redis"
+url = "redis://redis:6379/0"
+namespace = "piighost-proofreader"
+
+# No hasher and no cipher, so this Redis holds the real values in clear, and
+# piighost says so at boot. That is the honest state of this demo stack. To
+# close it, add:
+#
+#     [memory.hasher]
+#     type = "argon2"
+#
+#     [memory.cipher]
+#     type = "aesgcm"
+#
+# and set PIIGHOST_HASH_PEPPER and PIIGHOST_CIPHER_KEY in the environment —
+# build() refuses to start without them rather than encrypting with nothing.
+
 [linker]
 type = "exact"
 
