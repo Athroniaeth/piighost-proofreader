@@ -29,6 +29,19 @@ services:
       # domain to it, and it is reachable only from this project's docker
       # network. The day it gets a domain, give the client a key instead —
       # keyshield expects ak_v1-<id>-<secret> — and drop this line.
+      # The base image ships piighost 1.3.0, whose overlap resolver does not
+      # drop a detection that shares a span with another. Three of these
+      # patterns match a five-digit run — FR_ZIP, DE_ZIP, US_ZIP_CODE — so
+      # 75008 came out of the anonymizer as
+      # "<<DE_ZIP:1>><<FR_ZIP:1>><<US_ZIP_CODE:1>>": a corrupted document, not
+      # a redacted one. Upgrading piighost fixes it; [config] alone, since the
+      # pipeline is regex only and gliner2 would pull two gigabytes of torch.
+      #
+      # The `>=1.7` floor is what does the upgrading. Without a version uv
+      # sees piighost already installed, calls the requirement satisfied and
+      # installs only the extra's dependencies — which is why naming the
+      # extras alone left 1.3.0 in place.
+      - EXTRA_PACKAGES=piighost[config]>=1.7
       - PIIGHOST_ALLOW_ANONYMOUS=true
       - REDIS_URL=redis://redis:6379
     depends_on:
@@ -74,7 +87,7 @@ services:
         - CMD
         - /app/.venv/bin/python
         - -c
-        - import urllib.request; urllib.request.urlopen("http://127.0.0.1:8001/health")
+        - import urllib.request; urllib.request.urlopen("http://127.0.0.1:8001/api/health")
       interval: 10s
       timeout: 5s
       retries: 5
@@ -118,6 +131,9 @@ services:
     restart: unless-stopped
 
   # ----- Legacy Streamlit UI (kept for debug, started via `--profile legacy`) -----
+  # Behind the `legacy` profile, so it does not run unless asked for. It gets a
+  # healthcheck all the same: a service nobody watches is a service that fails
+  # quietly the day someone turns the profile on.
   streamlit:
     profiles: [legacy]
     build: .
@@ -132,6 +148,13 @@ services:
     depends_on:
       piighost-api:
         condition: service_started
+    healthcheck:
+      # Streamlit's own readiness route, which it serves beside the app.
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
 volumes:
