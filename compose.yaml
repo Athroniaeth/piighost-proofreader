@@ -60,16 +60,23 @@ services:
     restart: unless-stopped
 
   # ----- React frontend (nginx serving dist + reverse-proxy /api) -----
-  # SERVICE_FQDN_FRONTEND is read by Coolify at deploy time: it provisions
-  # a public Traefik FQDN routing to this container's exposed port.
-  # Locally it's ignored, and the "5173:80" host mapping is used instead.
+  # SERVICE_FQDN_FRONTEND_80 is read by Coolify at deploy time: it provisions
+  # a public Traefik FQDN routing to this container's port 80. The port belongs
+  # in the name — SERVICE_FQDN_<SERVICE>_<PORT> — and without it Coolify has no
+  # port to route to and composes a URL out of a scheme and nothing, which it
+  # then rejects itself: "The string `https://` is no valid url".
+  #
+  # A mapping rather than a list, because Coolify re-serializes the file and
+  # turns a list into a mapping by splitting each entry on `=`; a valueless
+  # magic variable comes back keyed by its position and compose refuses the
+  # file. Locally this is ignored and the "5173:80" host mapping is used.
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: piighost-proofreader-frontend:latest
     environment:
-      - SERVICE_FQDN_FRONTEND=/
+      SERVICE_FQDN_FRONTEND_80: ""
     expose:
       - "80"
     ports:
